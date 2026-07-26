@@ -1,5 +1,7 @@
 # Thresholds: what earns promotion
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 An observation is a *candidate*. This file decides when a candidate becomes a proposal. Getting these
 numbers wrong in either direction kills the tool: too low and it's noise ([etiquette.md](./etiquette.md)),
 too high and it never earns its keep.

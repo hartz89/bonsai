@@ -1,5 +1,7 @@
 # Adapter: Claude Code
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 Renders an artifact plan to Claude Code primitives. This is the default and the most capable target — all
 seven mechanisms are available.
 

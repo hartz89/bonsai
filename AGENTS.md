@@ -3,9 +3,6 @@
 A Claude Code plugin that proposes and prunes agent configuration based on how a project is actually
 developed. Harness-agnosticism is a design goal, not an afterthought — see `docs/roadmap.md`.
 
-This file is the canonical, tool-agnostic instruction set. `CLAUDE.md` is a thin wrapper that imports it
-and adds Claude-specific notes. Don't duplicate content between them.
-
 ## Commands
 
 ```bash
@@ -26,7 +23,7 @@ No build step, no package manager, no runtime dependencies beyond `sh`, `git`, `
 | `agents/` | Two Haiku read-only subagents |
 | `scripts/` | All deterministic work — see `reference/determinism.md` |
 | `adapters/` | Per-harness rendering rules |
-| `hooks/hooks.json` | `SessionEnd` observe, `SessionStart` surface, `PreCompact` fallback |
+| `hooks/hooks.json` | `SessionEnd` observe, `SessionStart` surface, `InstructionsLoaded` track loads, `PreCompact` fallback |
 | `docs/` | Roadmap, backlog, capability ledger |
 
 ## Invariants

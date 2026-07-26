@@ -1,11 +1,13 @@
 # Etiquette: polite but proactive
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 bonsai's failure mode is not "missed a pattern." It's "became annoying." An annoying harness tool gets
 uninstalled, and then it improves nothing.
 
 Design target: **visible but not chatty, proactive but never in the way, powerful but never
-overpowering.** The rules below are hard limits, not aspirations. Each is testable, and the fixtures in
-`tests/` assert them.
+overpowering.** The rules below are hard limits, not aspirations. Most are asserted in `tests/run.sh`; the
+ones that aren't are marked below.
 
 ## The seven rules
 
@@ -62,11 +64,11 @@ confidence twice.
 Someone shipping fast does not want a librarian. The retrospective skips entirely when the session
 looks like a hot path:
 
-- Fewer than 8 assistant turns (nothing to learn from a quick question)
-- Median turn gap under ~20s across the session (rapid back-and-forth)
-- More than 60% of tool calls are `Edit`/`Write` on the same 1–2 files (tight debug loop)
-- The session ended with failing tests or an unresolved error (the user is mid-problem)
-- A `.git/MERGE_HEAD`, `rebase-merge/`, or `BISECT_LOG` exists (mid-operation)
+- Fewer than 8 assistant turns — nothing to learn from a quick question *(implemented, asserted)*
+- A `.git/MERGE_HEAD`, `rebase-merge/`, `BISECT_LOG` etc. exists — mid-operation *(implemented, asserted)*
+- Median turn gap under ~20s across the session — rapid back-and-forth *(not yet implemented, backlog V-08)*
+- Over 60% of tool calls are `Edit`/`Write` on the same 1–2 files — tight debug loop *(not yet implemented)*
+- The session ended with failing tests or an unresolved error *(not yet implemented)*
 
 Suppression means *skip*, not *defer* — do not silently queue a backlog that lands as a pile later.
 Patterns worth catching will recur; that's the entire premise.
@@ -83,8 +85,8 @@ Hard rule: no bonsai code path blocks the user on a model call.
 ### 7. Opting out must be trivial and obvious
 
 - `/bonsai:pause` stops all observation and surfacing for the current repo, in one step.
-- Every notice is traceable to a documented off-switch; the README's second section is how to turn it
-  off, not how to configure it.
+- Every notice is traceable to a documented off-switch, and the README documents turning bonsai off before
+  it documents configuring it.
 - `/plugin uninstall bonsai` leaves the repo working. Generated artifacts are plain files the user
   owns and keeps; only bonsai's own state directory is bonsai's to clean up.
 

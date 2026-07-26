@@ -1,5 +1,7 @@
 # Placement: which artifact, at which scope
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 How bonsai decides what to build from an observed pattern. Read top to bottom; the gates are ordered
 so the cheapest rejection happens first.
 

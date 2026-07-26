@@ -1,5 +1,7 @@
 # The determinism boundary
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 Anything the same every time belongs in a script. Anything requiring judgment belongs to the model.
 Getting this wrong is the most expensive mistake bonsai can make, because bonsai's cost is paid on every
 session of every repo that installs it.
@@ -23,7 +25,10 @@ recurring pattern would silently reset its own threshold.
 | Proposal counting, etiquette back-off, archiving | `scripts/pending.sh` |
 | Cost guards: turn counts, rate limits, daily caps, mid-operation detection | `scripts/retro.sh` |
 | Resident-token estimates | `scripts/apply.py` |
-| Applying an approved proposal, updating the inventory, merging `.gitignore` | `scripts/apply.py` |
+| Applying an approved proposal, updating the inventory, filing the eval case | `scripts/apply.py` |
+| Recording which instruction artifacts actually load, for staleness | `scripts/touch_artifact.sh` |
+| Measuring bonsai's own resident footprint against its ceiling | `scripts/footprint.py` |
+| Checking the backlog against git history | `scripts/backlog_check.py` |
 | Staleness and orphan detection for pruning | `scripts/prune_scan.py` |
 
 ## Model-owned — genuinely needs judgment

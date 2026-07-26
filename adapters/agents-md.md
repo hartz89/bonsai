@@ -1,5 +1,7 @@
 # Adapter: portable (`AGENTS.md` + `SKILL.md`)
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 Renders an artifact plan to the cross-tool substrate, for repos where more than one agent tool is in use.
 
 `AGENTS.md` is a community convention stewarded by the Agentic AI Foundation under the Linux Foundation,

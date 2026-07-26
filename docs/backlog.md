@@ -21,7 +21,7 @@ Phase 0 items block everything else.
 | V-05 | Verify `/init` hand-off, both invocable and fallback paths | S | Docs and local skill list disagree; needs empirical answer |
 | V-06 | Confirm resident cost with `/context` before/after install | S | Validates the README's headline number |
 | V-07 | Log every proposal + verdict + reasoning by hand | M | Manual precursor to P-01. The Phase 1 dataset |
-| V-08 | Confirm flow-state guards fire at a sane rate | S | Target 40–70% of sessions skipped |
+| V-08 | Confirm flow-state guards fire at a sane rate, and implement the three unbuilt ones | M | Target 40–70% skipped. Turn-gap, edit-loop, and failing-test guards are documented in `etiquette.md` but not yet implemented |
 | V-09 | Dogfood on bonsai itself and record what it proposes | S | Also the README's opening demo |
 
 ---
@@ -118,7 +118,7 @@ Moved ahead of eval replay: replay built on Claude-only assumptions would need r
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
 | C-01 | Automate monthly re-verification of `sources.md` | M | Re-fetch canonical docs, diff against assertions, open an issue per drift |
-| C-02 | Add verification-date stamps to every `reference/` doc | S | Treat a stale stamp as a bug |
+| ~~C-02~~ | ~~Add verification-date stamps to every `reference/` doc~~ | — | **Done.** Every `reference/` and `adapters/` doc carries a `Sources verified` stamp |
 | C-03 | Watch for native promote/prune shipping upstream | — | Ongoing. Triggers the fold-in-and-archive path |
 | C-04 | Re-verify the `/init` vs `/doctor` invocability question | S | Explicitly flagged uncertain in `sources.md` |
 

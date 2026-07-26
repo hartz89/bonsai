@@ -1,5 +1,7 @@
 # The cost contract
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 bonsai asks to live in every session of your project. That's a privilege, and it comes with a bill:
 resident context tokens, marginal tokens per session, and money for the observation passes.
 

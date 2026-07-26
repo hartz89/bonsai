@@ -237,6 +237,9 @@ The reasoning is checked in, and every normative claim is cited:
 | [`reference/git-strategy.md`](reference/git-strategy.md) | Workflow detection and commit hygiene |
 | [`reference/determinism.md`](reference/determinism.md) | What's scripted vs left to the model, and why |
 | [`reference/sources.md`](reference/sources.md) | Every claim → canonical source |
+| [`adapters/claude-code.md`](adapters/claude-code.md) | Exact paths and frontmatter per Claude Code mechanism |
+| [`adapters/agents-md.md`](adapters/agents-md.md) | The portable subset, and the three gaps it can't cover |
+| [`docs/roadmap.md`](docs/roadmap.md) | Phases, exit criteria, and kill conditions |
 
 ## Turning it off
 

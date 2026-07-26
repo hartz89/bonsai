@@ -1,5 +1,7 @@
 # Git strategy: match the project's workflow
 
+*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+
 Harness changes are changes. They belong in version control, held to the same standard as code — and
 kept out of the way of feature work. How bonsai commits depends on what kind of project it's in.
 

@@ -16,8 +16,8 @@ Status: `done` · `partial` · `planned`
 | One-line surfacing | A `SessionStart` script counts pending proposals and emits a single line, no model call | You find out at a session boundary, never mid-task | done |
 | Enforced application | `apply.py` writes the artifact, files the eval case, records provenance — with a target-path allowlist | A poisoned proposal can't write outside harness paths. Enforced in code, not requested of a model | done |
 | Manual promotion | `/bonsai:promote` runs the same policy interactively | Power users can codify on demand instead of waiting for thresholds | done |
-| Review & apply | `/bonsai:review` renders diffs and applies on approval | The human stays the decision-maker | planned |
-| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts | The differentiator: every comparable tool only ever adds | planned |
+| Review & apply | `/bonsai:review` renders diffs and applies on approval | The human stays the decision-maker | done |
+| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts, and reports the footprint ledger | The differentiator: every comparable tool only ever adds | done |
 | Load tracking | An `InstructionsLoaded` hook logs which instruction artifacts actually load; staleness is measured from real usage | Makes pruning evidence-based rather than a guess. The hook has no output control, so it cannot interrupt | done |
 
 ## Placement intelligence
@@ -36,7 +36,7 @@ Status: `done` · `partial` · `planned`
 | Capability | What it does | Why a consumer cares | Status |
 | :--- | :--- | :--- | :--- |
 | Measured footprint | `footprint.py` computes bonsai's own resident cost against a 350-token ceiling | The cost claim is **testable**, not asserted. **Measured at 162 tokens**, enforced by `tests/run.sh` | done |
-| Zero-cost skills | Three of four skills are `disable-model-invocation`, so they cost nothing until invoked | Only `/bonsai:promote` is resident, because only it needs to be | done |
+| Zero-cost skills | Four of five skills are `disable-model-invocation`, so they cost nothing until invoked | Only `/bonsai:promote` is resident, because only it needs to be | done |
 | Flow-state protection | Skips sessions under 8 turns, hot-path edit loops, failing-test endings, mid-rebase/merge/bisect | Won't tap you on the shoulder mid-sprint. Guards run in shell before any model spawns | done |
 | Back-off, never escalate | Ignored proposals get quieter, then auto-archive at 7 sessions | The opposite of a nag. Silence is treated as an answer | done |
 | Cost ceilings | Haiku, `effort: low`, `maxTurns` bounded, 1/hour, 6/day default, fully disableable | You can't get surprised by a bill | done |

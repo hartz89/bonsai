@@ -185,6 +185,10 @@ no `--no-verify`, and never a push or PR without asking.
 | `/bonsai:promote` | Codify a pattern now, without waiting for a threshold |
 | `/bonsai:prune` | Audit and remove what no longer earns its keep; report the footprint ledger |
 
+bonsai also registers an `InstructionsLoaded` hook that records which instruction artifacts actually load, so
+pruning is based on real usage rather than age. That event has no output control, so it cannot interrupt
+anything.
+
 Plus `/bonsai:pause` (and `--resume`) to stop observation for a repo in one step.
 
 ## How this differs from prior art
@@ -202,6 +206,23 @@ There's real work in this space and bonsai overlaps some of it. The honest diffe
 **The one nobody else does: garbage collection.** Every project above is additive-only. A harness that
 only grows is a harness that gets worse at month six, because resident context is a shared attention
 budget. `/bonsai:prune` is the reason this is called bonsai.
+
+## What would make this project stop
+
+Stated in the README rather than buried, because a tool that can't name its own failure conditions will
+rationalize instead. From [`docs/roadmap.md`](docs/roadmap.md):
+
+- **If fewer than ~40% of proposals get accepted** after tuning, the classification isn't good enough and
+  bonsai is noise with extra steps.
+- **If Anthropic ships native promotion and pruning** — and the Agent Skills post explicitly anticipates
+  agents that "create, edit, and evaluate Skills on their own" — the right move is to fold this reference
+  corpus into whatever they ship and archive the plugin, not compete with it.
+- **If the retrospective needs a frontier model** rather than Haiku, the cost story collapses and bonsai
+  should become manual-only.
+
+Also worth knowing: **bonsai has not yet run for a sustained period on anyone else's project.** The scripts
+are covered by 53 assertions and the guidance is cited, but Phase 0 of the roadmap is validation for exactly
+this reason. Early adopters are early adopters.
 
 ## Design docs
 
@@ -233,7 +254,7 @@ dependencies.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). `sh tests/run.sh` — 46 assertions, no dependencies. If you change
+See [CONTRIBUTING.md](CONTRIBUTING.md). `sh tests/run.sh` — 53 assertions, no dependencies. If you change
 behavior described in `reference/`, update the doc and its citation in the same PR.
 
 MIT licensed.

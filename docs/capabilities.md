@@ -18,6 +18,7 @@ Status: `done` · `partial` · `planned`
 | Manual promotion | `/bonsai:promote` runs the same policy interactively | Power users can codify on demand instead of waiting for thresholds | done |
 | Review & apply | `/bonsai:review` renders diffs and applies on approval | The human stays the decision-maker | planned |
 | Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts | The differentiator: every comparable tool only ever adds | planned |
+| Load tracking | An `InstructionsLoaded` hook logs which instruction artifacts actually load; staleness is measured from real usage | Makes pruning evidence-based rather than a guess. The hook has no output control, so it cannot interrupt | done |
 
 ## Placement intelligence
 

@@ -9,7 +9,7 @@ and adds Claude-specific notes. Don't duplicate content between them.
 ## Commands
 
 ```bash
-sh tests/run.sh                                    # full suite, 46 assertions, no deps
+sh tests/run.sh                                    # full suite, 53 assertions, no deps
 sh scripts/survey.sh --project .                   # repo survey + tier/mode detection
 python3 scripts/footprint.py --plugin-root . --project . --format line
 ```
@@ -81,8 +81,9 @@ tier and mode. Expect the hooks to fire while working here.
 
 ## Gotchas
 
-- **`last_exercised` is never written yet** (backlog D-01), so staleness detection in `prune_scan.py` is
-  currently inert. Don't build on it until that's fixed.
+- **Staleness data accrues over time.** The `InstructionsLoaded` hook logs loads to
+  `.claude/bonsai/.state/exercised`; until it has run, `prune_scan.py` measures staleness from creation date
+  and reports `load_tracking.active: false`. Skills and subagents aren't tracked yet (backlog P-09).
 - **`/doctor` is a bundled skill** (model-invocable); **`/init` is documented as a built-in command** (not
   invocable) though some builds expose an `init` skill. Attempt, fall back, assert nothing.
 - **`pluginConfigs` is read from user settings only** — project settings are deliberately ignored so a cloned

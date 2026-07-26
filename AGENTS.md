@@ -6,7 +6,7 @@ developed. Harness-agnosticism is a design goal, not an afterthought — see `do
 ## Commands
 
 ```bash
-sh tests/run.sh                                    # full suite, 53 assertions, no deps
+sh tests/run.sh                                    # full suite, no deps
 sh scripts/survey.sh --project .                   # repo survey + tier/mode detection
 python3 scripts/footprint.py --plugin-root . --project . --format line
 python3 scripts/backlog_check.py --repo .          # backlog vs git history

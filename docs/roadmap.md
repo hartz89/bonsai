@@ -1,0 +1,292 @@
+# Roadmap
+
+How bonsai should evolve, and the order that matters. Itemized work lives in
+[backlog.md](./backlog.md); this file is the reasoning.
+
+**The governing constraint: bonsai has never run.** Every script is unit-tested and every claim in
+`reference/` is cited, but no skill has executed in a live session. The model-facing half — whether
+classification is any good, whether the retrospective returns usable observations, whether proposals are
+worth reading — is entirely unvalidated. Until that changes, any new feature is a guess dressed as
+progress.
+
+---
+
+# Cross-cutting commitments
+
+Three concerns that aren't phases. They constrain every decision from now on, because retrofitting any of
+them later is expensive.
+
+## 1. Harness-agnostic by construction
+
+**The goal is that bonsai works for anyone using Claude Code, Cursor, Codex, or whatever ships next.** That
+is an architectural commitment starting now, not a Phase 4 feature — every Claude-specific assumption baked
+into the core is one that has to be unpicked later.
+
+**Avoiding vendor lock-in is a headline selling point**, not a technical footnote. Anyone adopting a
+self-improving harness is making a bet on a tool ecosystem; bonsai should make that bet cheap to reverse.
+
+### The mechanism: canonical definitions, thin per-harness wrappers
+
+One canonical body per artifact, plus a thin wrapper per harness supplying that harness's frontmatter and
+living at that harness's path:
+
+```
+.harness/rules/testing.md          ← canonical body. Tool-agnostic prose. The single source of truth.
+                                     Edit this one.
+.claude/rules/testing.md           ← thin wrapper: `paths:` frontmatter + import of the canonical body
+.cursor/rules/testing.mdc          ← thin wrapper: `globs:` frontmatter + same body
+AGENTS.md                          ← references it for tools with no scoping mechanism
+```
+
+This is strictly better than having adapters *regenerate* each artifact, which is what earlier drafts of this
+roadmap specified. Regeneration means N copies that drift and N places to edit. Wrappers mean the human edits
+one file, every harness sees the change, and switching tools is adding a wrapper — not a migration.
+
+**This project dogfoods the pattern**: `AGENTS.md` is canonical, `CLAUDE.md` is a thin wrapper importing it
+plus Claude-specific notes.
+
+**Open implementation question (X-01a), and it gates the design:** does `.claude/rules/*.md` support `@`
+imports the way `CLAUDE.md` does? Confirmed: the rules directory supports **symlinks**, which handles the case
+where no harness-specific frontmatter is needed — but a symlink can't add `paths:`, and `paths:` is precisely
+the harness-specific part. Verify before building.
+
+### Drift control: parity linting
+
+Whichever mechanism wins, drift is the failure mode — and it's a *scripted* concern, squarely on the
+deterministic side of `reference/determinism.md`. `scripts/lint_parity.py` (W-04) walks the canonical bodies
+and their wrappers and fails when they disagree.
+
+This is what makes the inline-copy fallback acceptable rather than a compromise: if rules can't import, a
+generated wrapper may inline the canonical body, because a lint turns drift into a **test failure** instead of
+a latent bug. Same reasoning applies to skills and agents, where frontmatter differs per harness but the body
+shouldn't.
+
+Two consequences worth stating:
+
+- Parity lint joins `tests/run.sh`, so this repo can't ship a drifted wrapper.
+- For *consumers*, bonsai should **propose the parity check as an artifact** — a pre-commit hook or CI step in
+  their repo. A generated guardrail protecting generated config is exactly the kind of thing bonsai should be
+  producing, and it's a strong demo of the enforcement-vs-advisory distinction.
+
+Concretely, from now on:
+
+- Nothing in `scripts/` or the promotion policy hardcodes a Claude Code path. Targets come from the adapter.
+- `placement.md` reasons in **mechanism classes** (resident instruction, scoped instruction, procedure,
+  isolated worker, enforcement) rather than Claude primitives. The Claude mapping lives in
+  `adapters/claude-code.md`, where it already does.
+- A capability the target harness lacks degrades explicitly and says so, rather than silently producing an
+  artifact nobody reads.
+
+**What's needed first is a verified capability matrix**, and it's more nuanced than "Claude Code vs
+portable." Path scoping, for instance, is *not* Claude-only — Cursor rules support glob scoping — while
+`AGENTS.md` has no equivalent. The current `adapters/agents-md.md` treats path scoping as a portability gap,
+which is right for `AGENTS.md` and wrong for Cursor. That needs to be researched per-target and written down
+before more adapters get built (X-00).
+
+Honest caveat: enforcement hooks and model down-leveling may have no equivalent anywhere but Claude Code. If
+so, bonsai is genuinely *better* on Claude Code and merely *useful* elsewhere. That's an acceptable outcome —
+but it should be stated in the README rather than discovered by a disappointed Cursor user.
+
+## 2. Runtime robustness — pre-flight and self-healing
+
+bonsai currently assumes `python3` and POSIX `sh`. Both assumptions will fail for real users:
+
+- **`python3` is not installed by default on Windows**, and may be `python` or absent on minimal containers.
+- **Every hook script is POSIX `sh`.** On Windows, hooks can specify `shell: "powershell"`, which bonsai
+  doesn't do. So today bonsai is effectively macOS/Linux-only, and nothing says so.
+- `gh` is optional but its absence silently downgrades tier detection.
+
+A missing dependency must never break a session, and must never fail *silently* either. The required
+behavior is a **degradation ladder**, checked once at install and cached:
+
+| Tier | Available | bonsai does |
+| :--- | :--- | :--- |
+| Full | `python3`, `sh`, `git` | Everything |
+| Reduced | `sh`, `git`, no `python3` | Surfacing and guards still work (`pending.sh` and `retro.sh` are already pure `sh`). Threshold merging and `apply.py` fall back to the model doing the work in-skill — slower and costs tokens, but functional |
+| Manual | `sh` only | Observation off. `/bonsai:promote` and `/bonsai:review` still work; the agent does the bookkeeping |
+| Unsupported | none of the above | Refuse to install, with a clear reason. Never a half-installed state |
+
+Two design rules that fall out of this:
+
+1. **`pending.sh` and `retro.sh` must stay pure `sh` forever.** They're on the hot path; a Python dependency
+   there would make a missing interpreter break every session start. This is now an invariant, not an accident.
+2. **Pre-flight runs at install and is cached**, not re-checked per session. Probing the environment on every
+   `SessionStart` violates the cost contract.
+
+Self-healing should be *offering*, not *doing*: detect the gap, name the one-line fix (`brew install python3`),
+and degrade gracefully in the meantime. bonsai does not install software on someone's machine.
+
+## 3. Corpus freshness
+
+**The existential risk, and the least glamorous work.**
+
+`reference/` encodes Claude Code behavior as of 2026-07-25. Claude Code ships fast — the docs are littered
+with `min-version` notes for changes within single point releases. When behavior drifts, bonsai doesn't
+degrade gracefully; it starts confidently giving wrong advice, at scale, in other people's repositories.
+
+- **Re-verify `sources.md` monthly.** Re-fetch each canonical doc, diff against what `reference/` asserts,
+  open an issue per drift. Automatable, and a fitting use of `/loop` or a scheduled task.
+- **Stamp every reference doc** with its verification date; treat a stale stamp as a bug.
+- **Watch specifically for**: new hook events or types, changes to `SessionStart`/`SessionEnd` output control,
+  skill frontmatter additions, `disable-model-invocation` semantics, and whether `/init` becomes
+  model-invocable. This risk multiplies with each harness supported.
+- **Watch for obsolescence.** If Anthropic ships native promotion or pruning, fold in and archive rather than
+  compete.
+
+---
+
+# Phases
+
+## Phase 0 — Validate (blocking)
+
+Nothing else starts until this finishes. The work here is *using* bonsai, not building it.
+
+**Do:** install on real projects and live with it. Fix what breaks. Write down every proposal it makes and
+whether it was any good.
+
+**Explicitly do not:** add features or expand the reference corpus. If a gap is found, record it in the
+backlog and keep validating.
+
+The one exception is pre-flight (R-01/R-02): a missing dependency would silently invalidate the validation
+itself, so environment detection lands first.
+
+**Exit criteria** — all of them:
+
+- Run on **3+ real repos** for **2+ weeks**, including at least one with more than one contributor
+- At least **one accepted artifact the author wouldn't have written themselves** — the whole premise. If
+  every accepted proposal is something you'd have done anyway, bonsai is a reminder, not a tool
+- **Zero unsolicited interruptions** experienced as annoying, self-reported honestly
+- Measured resident cost matches the README's claim, verified with `/context` before and after
+- The `SessionEnd` → `SessionStart` round trip observed working end to end at least 10 times
+
+**Most likely failure modes**, in order of probability:
+
+1. The retrospective returns vague or wrong observations. Haiku may be too small; `retrospective_model` is
+   the escape hatch, but if Sonnet is required the cost story changes and `budget.md` needs rewriting.
+2. `SessionEnd` doesn't fire reliably (terminal kill, crash), so observation silently never happens.
+   `PreCompact` is the fallback; if both miss, the loop needs a different trigger.
+3. Proposals are technically correct but not worth the interruption. Hardest failure to detect, because
+   nothing errors — it just isn't useful.
+4. Delegation to `/init` fails because it isn't model-invocable in practice.
+
+## Phase 1 — Precision
+
+Once it runs, make it *right*. The only metric that matters is **proposal accept rate**.
+
+Every threshold in `thresholds.md` is currently a number I made up. They're reasoned, but they're guesses, and
+they should be replaced with numbers derived from what people actually accept.
+
+**Work:** instrument outcomes — accept / reject / edit per proposal, with structured reject reasons — and feed
+both back into confidence scoring. Tune thresholds from the data. Fix `placement.md` wherever classification
+demonstrably went wrong.
+
+**Target:** ≥70% of proposals accepted on first review. Below ~40% after tuning, the classification isn't
+good enough and bonsai is noise — see [kill criteria](#what-would-make-us-stop).
+
+A false positive is worse than a missed pattern. Tune toward fewer, better proposals rather than coverage.
+
+## Phase 2 — Harness-agnosticism, for real
+
+Deliberately ahead of eval replay. Replay machinery built against Claude-only assumptions would have to be
+rebuilt, and the capability matrix changes what the artifact plan needs to express.
+
+**Sequence:**
+
+1. **Verified capability matrix** across Claude Code, Cursor, Codex/`AGENTS.md`, and Copilot — per mechanism
+   class, what each target actually supports, cited like everything else in `reference/`.
+2. **Refactor the artifact plan** to be explicitly harness-neutral, if Phase 0/1 revealed leakage.
+3. **Implement the `AGENTS.md` adapter as code**, not documentation.
+4. **Implement a Cursor adapter**, which is the real test — Cursor has its own scoped-rule format, so it
+   exercises the seam rather than just the lowest common denominator.
+5. **Test on a repo genuinely using two tools**, and state the degradation honestly in the README.
+
+Windows support belongs here too (R-05): a PowerShell path for the hook scripts is a portability problem of
+the same shape.
+
+## Phase 3 — Eval replay
+
+The honest differentiator, and currently the biggest gap between what bonsai claims and what it does. v1
+*captures* eval cases; it can't yet answer **"does this artifact actually change behavior?"**
+
+Without replay, pruning rests on staleness heuristics — an artifact is suspect because it's old, not because
+it's proven useless. That's the one place bonsai's story is thinner than it sounds.
+
+**Cheapest first:**
+
+1. **On-demand single-case replay.** Run one captured case headless, with and without the artifact; show the
+   human both outputs. No automated judgment. Useful immediately, cheap to build.
+2. **Automated judgment.** A judge pass scores whether the expected behavior appeared. Hard — LLM-as-judge on
+   a noisy signal.
+3. **Regression suite.** Replay all cases on demand; flag artifacts that no longer change anything.
+
+**Known hard problems:** nondeterminism means one run proves little; replay costs real money; and "did it
+help" is often genuinely ambiguous. Build step 1, learn, and don't promise 2–3 until it teaches us something.
+
+## Phase 4 — Multi-developer
+
+A real architectural gap, not a feature request. Observations are machine-local by design (they contain
+verbatim conversation excerpts). So on a team of five, five people independently observe the same pattern,
+each crosses their own threshold, and **each proposes the same artifact.** Nobody has seen this yet because
+bonsai hasn't run on a team repo — but it follows from the design.
+
+Tensions to resolve:
+
+- **Dedup needs shared state; privacy forbids sharing excerpts.** Likely shape: a committed ledger of *hashed
+  pattern identities* and counts, excerpts staying local. bonsai learns "three teammates hit this" without
+  publishing what anyone said.
+- **Team thresholds may need to *drop*, not rise.** Corroboration across people is stronger evidence than
+  repetition by one person. The current `enterprise` tier raises thresholds; that may be backwards.
+- **Reviewing a harness proposal as a team.** Proposals are gitignored, so there's no PR to comment on.
+- **Who owns the harness?** Respect `CODEOWNERS` and route proposals to whoever owns the path.
+
+## Phase 5 — Ecosystem
+
+Distribution: community plugin lists, a launch writeup, conference or blog surface. Deliberately last —
+adoption before validation is actively harmful, because a tool giving bad harness advice at scale is worse
+than no tool.
+
+---
+
+## Metrics that matter
+
+Track from Phase 1 onward. Everything else is vanity.
+
+| Metric | Target | Why |
+| :--- | :--- | :--- |
+| Proposal accept rate | ≥70% | The precision signal. The single most important number |
+| Resident tokens | ≤350 | The cost contract, already enforced by tests |
+| Unsolicited interruptions / week | ~0 | Annoyance is the uninstall trigger |
+| Pruned : added ratio | → 1:1 in steady state | If this stays near 0:1, bonsai is just another accumulator |
+| Time to first accepted artifact | < 1 week | The install-time harvest exists so this isn't weeks |
+| Sessions skipped by flow guards | 40–70% | Too low means intrusive; too high means it never learns |
+| Install success rate across environments | ~100% | Nobody should get a half-installed state |
+
+---
+
+## What would make us stop
+
+Stated upfront, because a project that can't name its own failure conditions will rationalize instead.
+
+- **Accept rate stays below ~40% after Phase 1 tuning.** The classification isn't good enough; bonsai is
+  noise with extra steps, and shipping wider would be irresponsible.
+- **Anthropic ships native promote/prune.** Likely — the Agent Skills post explicitly anticipates agents that
+  "create, edit, and evaluate Skills on their own." Correct response: fold the reference corpus into whatever
+  ships, archive the plugin, say so plainly in the README.
+- **Retrospective quality requires a frontier model.** If Haiku can't do it and Sonnet+ is needed every
+  session, the cost story collapses and bonsai should become manual-only.
+- **Nobody accepts a proposal they wouldn't have written themselves.** Then it's a reminder system, and should
+  be rewritten as something much smaller.
+
+---
+
+## Deliberately not planned
+
+The YAGNI list. These come up naturally and should keep being declined:
+
+- **A skills marketplace or library.** `obra/superpowers` does this well. bonsai generates from *your* project.
+- **A web dashboard.** The artifacts are files. `git log` and `/bonsai:prune` are the interface.
+- **An MCP server.** Would add tool definitions to every session for work scripts already do.
+- **Agent-teams integration.** Experimental and disabled by default.
+- **Installing dependencies on the user's machine.** Detect, name the fix, degrade. Never install.
+- **Supporting every agent tool.** Claude Code, Cursor, and `AGENTS.md` done well beats six done badly.
+- **Auto-applying anything resident.** Not a feature, ever. The approval gate is the security model.

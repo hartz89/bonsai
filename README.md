@@ -6,9 +6,9 @@ bonsai watches how you actually work, then proposes the agent configuration your
 the right instruction in the right file at the right scope. And unlike every other tool in this space,
 it takes things back out when they stop earning their keep.
 
-It costs about **126 tokens** of resident context — roughly 5% of a `CLAUDE.md` at the documented
-200-line limit. That number is measured by `scripts/footprint.py`, and `tests/run.sh` fails if it grows
-past its ceiling.
+It costs **162 tokens** of resident context — about 6% of a `CLAUDE.md` at the documented 200-line limit.
+That number is measured by `scripts/footprint.py` against bonsai's own install, not estimated, and
+`tests/run.sh` fails if it grows past its ceiling.
 
 ```bash
 /plugin marketplace add hartz89/bonsai
@@ -112,6 +112,42 @@ the point:
 
 bonsai only builds the part that doesn't exist: the promote-and-prune ratchet, mechanism selection,
 provenance, and eval capture.
+
+## No vendor lock-in
+
+Adopting a self-improving harness means betting on a tool ecosystem. bonsai is built so that bet is cheap to
+reverse.
+
+Artifacts are authored as a **canonical, tool-agnostic body** plus a **thin per-harness wrapper** carrying
+that tool's frontmatter:
+
+```
+.harness/rules/testing.md     ← the canonical body. Edit this one.
+.claude/rules/testing.md      ← thin wrapper: `paths:` frontmatter
+.cursor/rules/testing.mdc     ← thin wrapper: `globs:` frontmatter
+AGENTS.md                     ← for tools with no scoping mechanism
+```
+
+You edit one file; every harness sees it. Adding a tool means adding a wrapper, not migrating. A parity lint
+fails the build if a wrapper ever drifts from its canonical body.
+
+Being straight about the current state: **the wrapper generation is designed, not shipped** — see
+[`docs/roadmap.md`](docs/roadmap.md) Phase 2. Today bonsai writes Claude Code artifacts and knows how to
+bridge to `AGENTS.md`. Some mechanisms may have no equivalent outside Claude Code at all (enforcement hooks,
+model down-leveling), which would make bonsai *better* on Claude Code and merely *useful* elsewhere. That gets
+documented rather than discovered.
+
+## It eats its own dog food
+
+bonsai is installed on bonsai. The hooks run on this repository, its tier and mode were auto-detected, and
+this project's own instructions use the wrapper pattern — `AGENTS.md` canonical, `CLAUDE.md` a thin import.
+
+It's already paid off: the resident-cost figure above was a *projected* 126 tokens until the dogfood install
+measured 162. The estimate was wrong, so the estimate got corrected.
+
+It's also a safety demonstration. `apply.py`'s allowlist permits only harness-config paths, so bonsai **cannot
+modify its own `reference/`, `scripts/`, or `skills/`** — the same mechanism that stops it touching your source
+code stops it touching its own.
 
 ## Safety
 

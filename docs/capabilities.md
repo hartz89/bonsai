@@ -34,7 +34,7 @@ Status: `done` · `partial` · `planned`
 
 | Capability | What it does | Why a consumer cares | Status |
 | :--- | :--- | :--- | :--- |
-| Measured footprint | `footprint.py` computes bonsai's own resident cost against a 350-token ceiling | The cost claim is **testable**, not asserted. **Measured at 97 tokens**, enforced by `tests/run.sh` | done |
+| Measured footprint | `footprint.py` computes bonsai's own resident cost against a 350-token ceiling | The cost claim is **testable**, not asserted. **Measured at 162 tokens**, enforced by `tests/run.sh` | done |
 | Zero-cost skills | Three of four skills are `disable-model-invocation`, so they cost nothing until invoked | Only `/bonsai:promote` is resident, because only it needs to be | done |
 | Flow-state protection | Skips sessions under 8 turns, hot-path edit loops, failing-test endings, mid-rebase/merge/bisect | Won't tap you on the shoulder mid-sprint. Guards run in shell before any model spawns | done |
 | Back-off, never escalate | Ignored proposals get quieter, then auto-archive at 7 sessions | The opposite of a nag. Silence is treated as an answer | done |
@@ -66,12 +66,23 @@ Worth stating publicly — it's the YAGNI story, and it's differentiating.
 
 ## Angles for social copy
 
-Claims that are true, specific, and non-obvious:
+Claims that are true, specific, and non-obvious. Verify each against the ledger above before posting —
+anything marked `planned` or `partial` must be framed as roadmap, not shipped.
 
 1. "Your CLAUDE.md is a landfill. bonsai is the only one of these tools that takes things *out*."
 2. "It learns from your sessions at zero context cost — the observation pass runs in a different process."
-3. "It measures its own footprint against a token ceiling, and the test fails if it exceeds it. 97 tokens."
+3. "It measures its own footprint against a token ceiling, and the test fails if it exceeds it. 162 tokens."
 4. "It won't interrupt you mid-sprint. It detects hot-path sessions in shell and skips before spending a token."
 5. "It knows the difference between a rule you can enforce and a preference you can only hope for — and routes them differently."
 6. "It doesn't reinvent `/init` or `/doctor`. It drives them for you."
 7. "Nothing it writes reaches your always-on context without you approving the diff."
+8. **Dogfooding**: "bonsai runs bonsai. The first thing it caught was our own README overstating how cheap it
+   was — projected 126 tokens, measured 162. We fixed the number." Self-deprecating, specific, and proves the
+   measurement is real rather than marketing.
+9. **Dogfooding as safety**: "It can't edit its own source. The allowlist that stops it touching your code
+   stops it touching ours."
+10. **Lock-in** (frame as roadmap, Phase 2 — *not* shipped): "Canonical rule bodies with thin per-harness
+    wrappers, and a lint that fails when they drift. Switching agent tools should be adding a wrapper, not a
+    migration."
+11. **Honesty angle**: "The roadmap has a section called 'What would make us stop.'" Unusual enough to be
+    worth a post on its own.

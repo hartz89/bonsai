@@ -29,10 +29,50 @@ die() { log "$1"; exit 0; }
 
 payload=$(cat 2>/dev/null || true)
 
+# Extract a JSON string field from the hook payload.
+#
+# A `sed`-with-[^"]* extraction breaks the moment a value contains an escaped quote — a transcript
+# path holding a `\"` silently truncates and the whole retrospective aims at a file that isn't
+# there. So this is a real (if small) JSON string scanner: it walks the payload character by
+# character, tracks string boundaries with backslash escapes honoured, and treats a string token as
+# a *key* only when the next non-space character is a colon and the one after that opens a string.
+# A value that happens to contain the text `"transcript_path":` therefore cannot be mistaken for
+# the key. `\uXXXX` is passed through unexpanded — paths don't use it and decoding it in awk would
+# cost more than it buys. No python: this runs before the detach (AGENTS.md invariant 5).
 field() {
-    printf '%s' "$payload" \
-        | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" \
-        | head -1
+    printf '%s' "$payload" | awk -v key="$1" '
+        { buf = buf $0 "\n" }
+        END {
+            n = length(buf); i = 1; want = 0
+            while (i <= n) {
+                if (substr(buf, i, 1) != "\"") { i++; continue }
+                s = ""; i++
+                while (i <= n) {
+                    ch = substr(buf, i, 1)
+                    if (ch == "\\") {
+                        e = substr(buf, i + 1, 1)
+                        if (e == "n") s = s "\n"
+                        else if (e == "t") s = s "\t"
+                        else if (e == "r") s = s "\r"
+                        else if (e == "b" || e == "f") s = s ""
+                        else if (e == "u") { s = s substr(buf, i, 6); i = i + 4 }
+                        else s = s e
+                        i = i + 2
+                        continue
+                    }
+                    if (ch == "\"") { i++; break }
+                    s = s ch; i++
+                }
+                if (want) { print s; exit }
+                if (s != key) continue
+                j = i
+                while (j <= n && index(" \t\r\n", substr(buf, j, 1)) > 0) j++
+                if (substr(buf, j, 1) != ":") continue
+                j++
+                while (j <= n && index(" \t\r\n", substr(buf, j, 1)) > 0) j++
+                if (substr(buf, j, 1) == "\"") { want = 1; i = j }
+            }
+        }' 2>/dev/null
 }
 
 TRANSCRIPT=$(field transcript_path)

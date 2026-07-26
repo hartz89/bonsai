@@ -478,6 +478,22 @@ has "sidechain records are excluded from the gap census" "$(retro "$t")" "daily 
 
 rm -rf "$d"; unset CLAUDE_PROJECT_DIR
 
+printf '\nretro: hook payload parsing (scripts/retro.sh field())\n'
+d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
+qdir="$d/we\"ird"; mkdir -p "$qdir"; t="$qdir/t.jsonl"; fill "$t" 10
+esc=$(printf '%s' "$t" | sed 's/"/\\"/g')
+out=$(printf '{"transcript_path":"%s","session_id":"s1"}' "$esc" | \
+    CLAUDE_PLUGIN_OPTION_DAILY_LIMIT=0 BONSAI_DEBUG=1 sh "$ROOT/scripts/retro.sh" 2>&1)
+lacks "an escaped quote in transcript_path survives extraction" "$out" "no transcript"
+has "...and the transcript is actually read" "$out" "daily limit is 0"
+
+# A value that merely *contains* the key text must not be mistaken for the key.
+t2="$d/real.jsonl"; fill "$t2" 10
+out=$(printf '{"note":"see \\"transcript_path\\": \\"/nope\\"","transcript_path":"%s","session_id":"s1"}' "$t2" | \
+    CLAUDE_PLUGIN_OPTION_DAILY_LIMIT=0 BONSAI_DEBUG=1 sh "$ROOT/scripts/retro.sh" 2>&1)
+has "a decoy key inside a string value is ignored" "$out" "daily limit is 0"
+rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+
 # === END flow-state guards ==================================================================
 
 # ---------------------------------------------------------------------------

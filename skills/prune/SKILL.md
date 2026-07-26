@@ -41,6 +41,27 @@ unilaterally.
    | `redundant` — guidance a linter or formatter now enforces | Safe to remove; the tool is the artifact |
    | `superseded` — an artifact the codebase has moved past | Check git history before claiming this |
 
+   **Show the measurement, not the verdict.** The one thing bonsai knows that a human reading the file
+   doesn't is whether the file was ever consulted, so every line about an artifact states it. Each
+   `stale` finding carries `days_loaded_in_window`, `window_days`, and `coverage`, and
+   `load_tracking.evidence` carries the same for artifacts that aren't stale.
+
+   ```
+   .claude/rules/graphql.md — loaded on 0 of the last 60 days (created 2026-04-02)
+   .claude/rules/testing.md — loaded on 14 of the last 60 days; keep
+   ```
+
+   Two caveats are not optional, because a confident number from an inactive sensor is worse than no
+   number:
+
+   - `load_tracking.active: false` means nothing has been recorded yet at all. Say the staleness is
+     measured from the creation date and the count proves nothing.
+   - `coverage: "partial"` (skills) means only model invocations are counted. A skill the team invokes
+     by typing `/name` shows zero. Never propose removing a skill on a zero count alone — ask.
+
+   The unit is days-with-a-load, not invocations. Write "loaded on 3 of the last 60 days", never
+   "loaded 3 times".
+
 4. **Demote rather than delete.** Preferred order: **scope it** (add `paths:`) → **move it** (CLAUDE.md
    to a rule, rule to a skill) → **archive it** (out of context, retained on disk) → delete. Deletion is
    the last resort, and the artifact's eval case in `.claude/bonsai/evals/` is retained either way.

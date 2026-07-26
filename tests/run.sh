@@ -307,7 +307,39 @@ is "non-Skill tools log nothing" "$(logged | tr ',' '\n' | grep -c .)" "3"
 # agent_type rides along on every event fired inside a subagent; file_path still wins.
 printf '{"hook_event_name":"InstructionsLoaded","agent_type":"reviewer","file_path":"%s/.claude/rules/r.md"}' "$d" | t
 has "a load inside a subagent credits the rule, not the agent" "$(logged)" ".claude/rules/r.md"
+
+# --- the report line: counting in the script, prose in the skill (P-11) -----
+cat > "$d/.claude/bonsai/inventory.json" <<EOF
+{"artifacts":[
+ {"id":"dead","target":".claude/rules/dead.md","mechanism":"rule","created":"2020-01-01T00:00:00Z"},
+ {"id":"sk","target":".claude/skills/deploy/SKILL.md","mechanism":"skill","created":"2020-01-01T00:00:00Z"}
+],"pruned_count":0}
+EOF
+printf 'x\n' > "$d/.claude/rules/dead.md"
+q() { python3 "$ROOT/scripts/prune_scan.py" --project "$d" | python3 -c "import json,sys;$1"; }
+is "window is reported alongside the count" \
+  "$(q "print(json.load(sys.stdin)['load_tracking']['window_days'])")" "60"
+is "a never-loaded artifact reports zero days in the window" \
+  "$(q "print([f['days_loaded_in_window'] for f in json.load(sys.stdin)['findings'] if f['target']=='.claude/rules/dead.md'])")" \
+  "[0]"
+is "a loaded artifact carries evidence even when not stale" \
+  "$(q "print([e['days_loaded_in_window'] for e in json.load(sys.stdin)['load_tracking']['evidence'] if e['target']=='.claude/skills/deploy/SKILL.md'])")" \
+  "[1]"
+is "skill coverage is flagged partial" \
+  "$(q "print([e['coverage'] for e in json.load(sys.stdin)['load_tracking']['evidence'] if e['target'].startswith('.claude/skills/')])")" \
+  "['partial']"
+is "rule coverage is flagged full" \
+  "$(q "print([e['coverage'] for e in json.load(sys.stdin)['load_tracking']['evidence'] if e['target']=='.claude/rules/dead.md'])")" \
+  "['full']"
+is "load tracking is active once anything is logged" \
+  "$(q "print(json.load(sys.stdin)['load_tracking']['active'])")" "True"
+rm -f "$log"
+is "the inactive caveat appears when nothing is logged" \
+  "$(q "print(json.load(sys.stdin)['load_tracking']['active'])")" "False"
+has "the inactive caveat explains itself" \
+  "$(q "print(json.load(sys.stdin)['load_tracking']['hint'])")" "weak evidence"
 rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+
 
 # bonsai's own hooks must stay unable to reach the user (reference/etiquette.md rule 1).
 hj=$(cat "$ROOT/hooks/hooks.json")

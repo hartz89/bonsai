@@ -19,11 +19,13 @@ them later is expensive.
 ## 1. Harness-agnostic by construction
 
 **The goal is that bonsai works for anyone using Claude Code, Cursor, Codex, or whatever ships next.** That
-is an architectural commitment starting now, not a Phase 4 feature — every Claude-specific assumption baked
-into the core is one that has to be unpicked later.
+is an architectural commitment starting now, even though the adapters themselves wait for Phase 3 — every
+Claude-specific assumption baked into the core is one that has to be unpicked later.
 
-**Avoiding vendor lock-in is a headline selling point**, not a technical footnote. Anyone adopting a
-self-improving harness is making a bet on a tool ecosystem; bonsai should make that bet cheap to reverse.
+**Avoiding vendor lock-in is table stakes, not a differentiator** — cross-tool layouts already ship
+elsewhere (see Phase 3). It stays a cross-cutting commitment anyway: anyone adopting a self-improving
+harness is making a bet on a tool ecosystem, and bonsai should make that bet cheap to reverse. Lead with
+the measurement, build the portability in regardless.
 
 ### The mechanism: canonical definitions, thin per-harness wrappers
 

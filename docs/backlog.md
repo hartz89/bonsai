@@ -157,7 +157,7 @@ Real issues in what's already shipped. Not features.
 | D-08 | Nested `CLAUDE.md` placement is documented but unimplemented | M | Monorepo guidance exists in `placement.md`; no code path produces it |
 | ~~D-09~~ | The "additive-only" claim is too broad to be true | S | **Done.** Narrowed in `README.md` and `docs/capabilities.md`: cleanup tooling exists, but it judges an artifact by reading it. What holds is that nothing else records whether an artifact was ever *loaded* |
 | ~~D-10~~ | Prior-art table is out of date | S | **Done.** Rebuilt against the strongest current set (self-learning-skills, ClaudeForge, Context Cleanup, claude-reflect) and dated, since it goes stale in about a quarter. Re-verify under C-05 |
-| D-11 | Roadmap calls harness-agnosticism a "headline selling point" | S | `roadmap.md:25`. Superseded by the Phase 3 demotion; the cross-cutting commitment stands, the marketing claim doesn't |
+| ~~D-11~~ | Roadmap calls harness-agnosticism a "headline selling point" | S | **Done.** Cross-cutting commitment 1 now reads "table stakes, not a differentiator" and points at Phase 3 for the reasoning. The architectural discipline stands; the marketing claim is gone |
 
 ---
 

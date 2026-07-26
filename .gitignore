@@ -9,6 +9,9 @@
 CLAUDE.local.md
 .claude/settings.local.json
 
+# Local scratch space — drafts, notes, marketing copy, anything not part of the project
+.local/
+
 # Worktrees bonsai creates for isolated harness commits
 .bonsai-worktrees/
 

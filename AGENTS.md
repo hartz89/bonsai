@@ -12,6 +12,7 @@ and adds Claude-specific notes. Don't duplicate content between them.
 sh tests/run.sh                                    # full suite, 53 assertions, no deps
 sh scripts/survey.sh --project .                   # repo survey + tier/mode detection
 python3 scripts/footprint.py --plugin-root . --project . --format line
+python3 scripts/backlog_check.py --repo .          # backlog vs git history
 ```
 
 No build step, no package manager, no runtime dependencies beyond `sh`, `git`, `python3`. `gh` is optional.
@@ -64,6 +65,10 @@ Breaking any of these breaks the value proposition, not just style.
   measure it, don't publish it.
 - Keep this file instructional. Decisions and history belong in `docs/`; every line here costs resident
   context in every session forever.
+- **Closing a backlog item**: strike its ID in `docs/backlog.md` (`| ~~P-05~~ |`) with a `**Done.**` note, and
+  add a `Backlog: P-05` trailer to the commit. `scripts/backlog_check.py` fails the test suite when a commit
+  claims an item that's still open, or an item is struck with no commit behind it. Discovering a new gap means
+  adding a row with the next free ID rather than leaving it in prose.
 - Every new placement rule needs: the row in `reference/placement.md` (including the rejected alternative), a
   threshold in `reference/thresholds.md`, the class in `BASE_THRESHOLDS`, a worked example, and a citation.
 

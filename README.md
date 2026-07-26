@@ -247,6 +247,45 @@ The reasoning is checked in, and every normative claim is cited:
 
 Artifacts bonsai created are plain files you own and keep. Only its own state directory goes away.
 
+## Installing on a team
+
+For yourself, `/plugin marketplace add hartz89/bonsai` then `/plugin install bonsai` is enough. For a work
+repo where teammates should get it automatically, commit this to `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "bonsai": { "source": { "source": "github", "repo": "hartz89/bonsai" } }
+  },
+  "enabledPlugins": ["bonsai@bonsai"]
+}
+```
+
+Teammates are prompted to install when they trust the project folder — nobody has to run
+`/plugin marketplace add` by hand. Install scopes: `user` (`~/.claude/settings.json`, personal), `project`
+(committed, team-wide), `local` (gitignored), `managed` (org policy).
+
+### How updates reach you
+
+bonsai sets an explicit `version` in `plugin.json`, so **you only receive changes when a release bumps it**.
+Commits landing on `main` don't reach installed users. That's intentional while the project is pre-validation —
+`main` moves faster than anything you should be running.
+
+- `/plugin update bonsai` — pull the latest release
+- `/plugin marketplace update` — refresh the catalog itself
+- Background auto-updates check the resolved version and skip when it matches what you have
+- `CHANGELOG.md` records what's in each release and what's still unreleased on `main`
+
+To pin harder, the marketplace source accepts a `ref` (branch or tag, though not a bare SHA), so you can track
+a tag instead of the default branch.
+
+For enterprise environments, `strictKnownMarketplaces` in managed settings restricts which marketplaces anyone
+can add; pair it with `extraKnownMarketplaces` to register approved ones automatically. Stable-vs-early-access
+rollout is done by pointing user groups at different marketplaces via managed settings.
+
+One caveat if you ever fork this privately: background auto-updates disable git credential helpers, so private
+marketplaces over HTTPS can fail intermittently. SSH remotes are unaffected.
+
 ## Requirements
 
 Claude Code v2.1.196+, `python3`, `git`. `gh` optional (improves workflow detection). No runtime

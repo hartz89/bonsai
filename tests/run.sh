@@ -28,6 +28,10 @@ for f in "$ROOT"/scripts/*.py; do
 done
 
 # ---------------------------------------------------------------------------
+printf '\nbacklog: docs/backlog.md vs git history\n'
+out=$(python3 "$ROOT/scripts/backlog_check.py" --repo "$ROOT" 2>&1)
+if [ $? -eq 0 ]; then ok "backlog in sync with git history"; else no "backlog drift" "$out"; fi
+
 printf '\nbudget: resident footprint (reference/budget.md)\n'
 fp=$(python3 "$ROOT/scripts/footprint.py" --plugin-root "$ROOT" --project "$ROOT")
 within=$(printf '%s' "$fp" | python3 -c "import json,sys;print(json.load(sys.stdin)['within_budget'])")

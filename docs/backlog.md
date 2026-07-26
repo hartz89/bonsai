@@ -106,7 +106,9 @@ Moved ahead of eval replay: replay built on Claude-only assumptions would need r
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
 | Z-01 | Submit to community plugin lists | S | Only after Phase 1 |
-| Z-02 | Write the launch post | M | `capabilities.md` has the angles |
+| Z-02 | Write the launch post | M | Drafts in `.local/social/` (gitignored). Hold long-form until Phase 0 is done |
+| Z-03 | Decide release cadence and whether to keep the pinned `version` | S | Pinned means consumers stay on 0.1.0 while `main` iterates — right for now, revisit at 1.0 |
+| Z-04 | Verify `claude plugin update` actually delivers a bump end to end | S | Never tested. The whole distribution story rests on it |
 
 ---
 

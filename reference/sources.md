@@ -67,3 +67,9 @@ Recorded so they get re-verified rather than calcifying:
   requires the resolved path to exist under `.claude/skills/` before logging anything. If the field is
   renamed upstream, skill tracking silently stops rather than recording the wrong artifact. Re-verify
   when the tool-input tables gain a `Skill` entry.
+- **The transcript JSONL record shape.** [Hooks](https://code.claude.com/docs/en/hooks) specifies that a
+  hook payload carries `transcript_path`, but not what is inside the file. The flow-state guards in
+  `etiquette.md` rule 5 read `type`, `timestamp`, `isSidechain`, `isMeta`, `tool_use`/`tool_result`
+  blocks and `Edit`/`Write` `file_path` inputs — all *observed* in v2.1.220 transcripts, not specified
+  anywhere. Treat every field as optional: each guard fails open (runs the retrospective) when it
+  cannot compute its signal, so a format change costs suppression accuracy and nothing else.

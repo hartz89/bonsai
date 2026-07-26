@@ -15,6 +15,15 @@ set -u
 MIN_TURNS=8
 MIN_SECONDS_BETWEEN_RUNS=3600
 
+# Flow-state guards — reference/etiquette.md rule 5. Every threshold here is a suppression
+# threshold, so the safe direction is always "don't suppress": below the minimum sample sizes the
+# signal is noise and the retrospective runs.
+FAST_GAP_SECONDS=20      # a gap between consecutive human prompts shorter than this is "rapid"
+MIN_GAPS_FOR_MEDIAN=8    # fewer measurable gaps than this and the median means nothing
+MIN_TOOLS_FOR_LOOP=10    # fewer tool calls than this and the edit-loop ratio means nothing
+EDIT_LOOP_PERCENT=60     # >this% of all tool calls landing on the top two edited files
+TAIL_RECORDS=20          # how many trailing transcript records the failure guard reads
+
 log() { [ -n "${BONSAI_DEBUG:-}" ] && printf 'bonsai: %s\n' "$1" >&2; return 0; }
 die() { log "$1"; exit 0; }
 
@@ -59,6 +68,99 @@ if [ -e "$GITDIR" ]; then
     for marker in MERGE_HEAD rebase-merge rebase-apply CHERRY_PICK_HEAD BISECT_LOG REVERT_HEAD; do
         [ -e "$GITDIR/$marker" ] && die "mid-operation: $marker"
     done
+fi
+
+# --- Flow-state signals: one awk pass over the transcript, no model, no python. ---------------
+#
+# Emits four integers: <measurable prompt gaps> <gaps under FAST_GAP_SECONDS> <tool calls>
+# <top-two-file edit count>. Sidechain (subagent) records are excluded throughout: they interleave
+# with the main thread, so their timestamps would fabricate gaps no human ever sat through.
+#
+# Cost is one linear scan with no sorting and no per-line subprocess, so it stays flat on a
+# multi-megabyte transcript. Any awk failure yields empty output, and empty output suppresses
+# nothing.
+signals=$(awk -v fast="$FAST_GAP_SECONDS" '
+    # Days-from-civil (Howard Hinnant); avoids one date(1) fork per line.
+    function epoch(ts,   y, mo, d, h, mi, s, a, era, yoe, doy, doe) {
+        if (length(ts) < 19 || substr(ts, 5, 1) != "-" || substr(ts, 11, 1) != "T") return -1
+        y = substr(ts, 1, 4) + 0; mo = substr(ts, 6, 2) + 0; d = substr(ts, 9, 2) + 0
+        h = substr(ts, 12, 2) + 0; mi = substr(ts, 15, 2) + 0; s = substr(ts, 18, 2) + 0
+        if (y < 1970 || mo < 1 || mo > 12 || d < 1 || d > 31) return -1
+        a = (mo <= 2) ? 1 : 0
+        y -= a
+        era = int(y / 400); yoe = y - era * 400
+        doy = int((153 * (mo + (a ? 9 : -3)) + 2) / 5) + d - 1
+        doe = yoe * 365 + int(yoe / 4) - int(yoe / 100) + doy
+        return (era * 146097 + doe - 719468) * 86400 + h * 3600 + mi * 60 + s
+    }
+    # Attribute each Edit/Write-shaped tool call to the file_path that follows it on the line.
+    function edits_on(line,   fp) {
+        while (match(line, /"name":"(Edit|MultiEdit|Write|NotebookEdit)"/)) {
+            line = substr(line, RSTART + RLENGTH)
+            if (!match(line, /"file_path":"[^"]*"/)) break
+            fp = substr(line, RSTART + 13, RLENGTH - 14)
+            edits[fp]++
+            line = substr(line, RSTART + RLENGTH)
+        }
+    }
+    /"isSidechain":[ ]*true/ { next }
+    {
+        tools += gsub(/"type":"tool_use"/, "&")
+        edits_on($0)
+        # A "turn" for gap purposes is a human prompt, not an assistant record. One assistant turn
+        # emits a record per tool call, seconds apart, so timing assistant records would score
+        # every tool-heavy session as frantic. Tool results and the harness meta records that
+        # wrap slash commands are user-typed by shape only, and are excluded.
+        if ($0 !~ /"type":"user"/) next
+        if ($0 ~ /"type":"tool_result"/ || $0 ~ /"isMeta":[ ]*true/) next
+        if (!match($0, /"timestamp":"[^"]*"/)) next
+        t = epoch(substr($0, RSTART + 13, RLENGTH - 14))
+        if (t < 0) next
+        if (prev > 0 && t >= prev) { gaps++; if (t - prev < fast) quick++ }
+        prev = t
+    }
+    END {
+        for (f in edits) {
+            if (edits[f] > m1) { m2 = m1; m1 = edits[f] }
+            else if (edits[f] > m2) { m2 = edits[f] }
+        }
+        printf "%d %d %d %d\n", gaps + 0, quick + 0, tools + 0, m1 + m2
+    }' "$TRANSCRIPT" 2>/dev/null)
+
+log "signals (gaps quick tools hot): ${signals:-unavailable}"
+
+case "$signals" in
+    [0-9]*' '[0-9]*' '[0-9]*' '[0-9]*)
+        # shellcheck disable=SC2086  # four validated integers, deliberate word split
+        set -- $signals
+        gaps=$1; quick=$2; tools=$3; hot=$4
+
+        # Rapid back-and-forth. "Median prompt gap under 20s" is evaluated without sorting: the
+        # median is under the threshold exactly when strictly more than half the gaps are.
+        # Sessions with a thin sample fail open.
+        if [ "$gaps" -ge "$MIN_GAPS_FOR_MEDIAN" ] && [ $((quick * 2)) -gt "$gaps" ]; then
+            die "rapid iteration: $quick/$gaps turn gaps under ${FAST_GAP_SECONDS}s"
+        fi
+
+        # Tight debug loop: the two most-edited files account for more than 60% of *all* tool
+        # calls, not just of the edits — reading and running things around an edit is normal work,
+        # hammering save on the same two files is not.
+        if [ "$tools" -ge "$MIN_TOOLS_FOR_LOOP" ] &&
+           [ $((hot * 100)) -gt $((tools * EDIT_LOOP_PERCENT)) ]; then
+            die "tight edit loop: $hot/$tools tool calls edit the same 1-2 files"
+        fi
+        ;;
+esac
+
+# Ended on a failure. Deliberately narrow and deliberately recent: only the last TAIL_RECORDS
+# transcript records are read, and only for an errored tool result or an unambiguous test-failure
+# banner. It does not try to decide whether the error was later fixed — it asks the cheaper
+# question "was the last thing that happened a failure", which is the thing rule 5 cares about.
+# A count of zero failures ("0 failed") deliberately does not match.
+if tail -n "$TAIL_RECORDS" "$TRANSCRIPT" 2>/dev/null | grep -Eq \
+    '"is_error":[ ]*true|<tool_use_error>|[1-9][0-9]* (tests? )?(failed|failures)|FAILED|Traceback \(most recent call last\)'
+then
+    die "session ended on a failure"
 fi
 
 mkdir -p "$STATE" 2>/dev/null || die "cannot write state"

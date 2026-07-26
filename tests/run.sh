@@ -390,6 +390,95 @@ out=$(printf '{"transcript_path":"%s","session_id":"s1"}' "$t" | BONSAI_DEBUG=1 
 has "retro.sh actually honours the marker the skill creates" "$out" "paused"
 rm -rf "$d"; unset CLAUDE_PROJECT_DIR
 # END D-02 block
+# === BEGIN flow-state guards (V-08) =========================================================
+#
+# Every "does not suppress" case is asserted by forcing a *later* guard to fire: with
+# CLAUDE_PLUGIN_OPTION_DAILY_LIMIT=0, reaching "daily limit is 0" proves the flow-state guards let
+# the session through, and does it without ever spawning a model.
+
+printf '\netiquette: flow-state guards (reference/etiquette.md rule 5)\n'
+
+# Fake transcript records, shaped like the real JSONL (see reference/sources.md, uncertain claims).
+say()  { printf '{"type":"assistant","isSidechain":false,"message":{"role":"assistant","content":[{"type":"text","text":"ok"}]}}\n' >> "$1"; }
+fill() { n=0; while [ "$n" -lt "$2" ]; do say "$1"; n=$((n+1)); done; }
+ask()  { printf '{"type":"user","isSidechain":false,"message":{"role":"user","content":"go"},"timestamp":"%s"}\n' "$2" >> "$1"; }
+call() { printf '{"type":"assistant","isSidechain":false,"message":{"role":"assistant","content":[{"type":"tool_use","id":"t","name":"%s","input":{"file_path":"%s"}}]}}\n' "$2" "$3" >> "$1"; }
+result(){ printf '{"type":"user","isSidechain":false,"message":{"role":"user","content":[{"type":"tool_result","content":"%s","is_error":%s}]},"timestamp":"2026-07-26T10:00:00.000Z"}\n' "$2" "$3" >> "$1"; }
+
+d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
+retro() { printf '{"transcript_path":"%s","session_id":"s1"}' "$1" | \
+    CLAUDE_PLUGIN_OPTION_DAILY_LIMIT=0 BONSAI_DEBUG=1 sh "$ROOT/scripts/retro.sh" 2>&1; }
+
+# --- guard: median gap between human prompts under 20s ---
+t="$d/rapid.jsonl"; i=0
+while [ $i -lt 9 ]; do ask "$t" "2026-07-26T10:00:0$i.000Z"; say "$t"; i=$((i+1)); done
+has "skips rapid back-and-forth" "$(retro "$t")" "rapid iteration"
+
+t="$d/paced.jsonl"; i=0
+while [ $i -lt 9 ]; do ask "$t" "2026-07-26T10:0$i:00.000Z"; say "$t"; i=$((i+1)); done
+out=$(retro "$t")
+lacks "a paced session is not rapid iteration" "$out" "rapid iteration"
+has "...and reaches the later guards" "$out" "daily limit is 0"
+
+# Fail open: same 1s cadence, timestamps stripped. Unmeasurable must never mean suppressed.
+t="$d/notime.jsonl"; i=0
+while [ $i -lt 9 ]; do printf '{"type":"user","message":{"role":"user","content":"go"}}\n' >> "$t"; say "$t"; i=$((i+1)); done
+has "missing timestamps fail open" "$(retro "$t")" "daily limit is 0"
+
+# Under the 8-gap floor the median is noise, so it must not suppress even though every gap is 1s.
+t="$d/thin.jsonl"; i=0
+while [ $i -lt 4 ]; do ask "$t" "2026-07-26T10:00:0$i.000Z"; say "$t"; i=$((i+1)); done
+fill "$t" 6
+has "too few gaps to take a median" "$(retro "$t")" "daily limit is 0"
+
+# --- guard: >60% of tool calls are Edit/Write on the same 1-2 files ---
+t="$d/loop.jsonl"; i=0
+while [ $i -lt 5 ]; do call "$t" Edit "/p/a.py"; call "$t" Edit "/p/b.py"; i=$((i+1)); done
+call "$t" Read "/p/c.py"; call "$t" Read "/p/d.py"
+has "skips a tight edit loop" "$(retro "$t")" "tight edit loop"
+
+# Same 12 tool calls, but the edits are spread and reading dominates.
+t="$d/spread.jsonl"
+call "$t" Edit "/p/a.py"; call "$t" Edit "/p/b.py"; call "$t" Edit "/p/c.py"
+i=0; while [ $i -lt 9 ]; do call "$t" Read "/p/r$i.py"; i=$((i+1)); done
+out=$(retro "$t")
+lacks "spread-out edits are not a loop" "$out" "tight edit loop"
+has "...and reach the later guards" "$out" "daily limit is 0"
+
+# Under the 10-call floor the ratio is noise: 2 edits on one file is 100% and must not suppress.
+t="$d/fewtools.jsonl"; call "$t" Edit "/p/a.py"; call "$t" Edit "/p/a.py"; fill "$t" 8
+has "too few tool calls to judge a loop" "$(retro "$t")" "daily limit is 0"
+
+# --- guard: the session ended on a failure ---
+t="$d/broke.jsonl"; fill "$t" 10; result "$t" "boom" "true"
+has "skips a session ending in an error" "$(retro "$t")" "ended on a failure"
+
+t="$d/redtests.jsonl"; fill "$t" 10
+result "$t" "3 tests failed" "false"
+has "skips a session ending with failing tests" "$(retro "$t")" "ended on a failure"
+
+t="$d/greentests.jsonl"; fill "$t" 10
+result "$t" "53 passed, 0 failed" "false"
+out=$(retro "$t")
+lacks "a zero failure count is not a failure" "$out" "ended on a failure"
+has "...and reaches the later guards" "$out" "daily limit is 0"
+
+# Recency is the whole point: an error 25 records back was survived, not left unresolved.
+t="$d/recovered.jsonl"; fill "$t" 5; result "$t" "boom" "true"; fill "$t" 25
+has "an old, recovered error does not suppress" "$(retro "$t")" "daily limit is 0"
+
+# Subagent sidechains must not be counted as the user's own frantic typing.
+t="$d/side.jsonl"; i=0
+while [ $i -lt 9 ]; do
+    printf '{"type":"user","isSidechain":true,"message":{"role":"user","content":"go"},"timestamp":"2026-07-26T10:00:0%s.000Z"}\n' "$i" >> "$t"
+    i=$((i+1))
+done
+fill "$t" 10
+has "sidechain records are excluded from the gap census" "$(retro "$t")" "daily limit is 0"
+
+rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+
+# === END flow-state guards ==================================================================
 
 # ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"

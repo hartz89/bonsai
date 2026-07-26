@@ -76,12 +76,29 @@ looks like a hot path:
 
 - Fewer than 8 assistant turns — nothing to learn from a quick question *(implemented, asserted)*
 - A `.git/MERGE_HEAD`, `rebase-merge/`, `BISECT_LOG` etc. exists — mid-operation *(implemented, asserted)*
-- Median turn gap under ~20s across the session — rapid back-and-forth *(not yet implemented, backlog V-08)*
-- Over 60% of tool calls are `Edit`/`Write` on the same 1–2 files — tight debug loop *(not yet implemented)*
-- The session ended with failing tests or an unresolved error *(not yet implemented)*
+- Median turn gap under ~20s across the session — rapid back-and-forth *(implemented, asserted)*
+- Over 60% of tool calls are `Edit`/`Write` on the same 1–2 files — tight debug loop *(implemented, asserted)*
+- The session ended with failing tests or an unresolved error *(implemented, asserted)*
 
 Suppression means *skip*, not *defer* — do not silently queue a backlog that lands as a pile later.
 Patterns worth catching will recur; that's the entire premise.
+
+The last three are heuristics over the transcript JSONL, computed in one `awk` pass in
+`scripts/retro.sh` before any model spawns. Stating them precisely, because a guard that suppresses
+for reasons nobody can reconstruct is worse than no guard:
+
+| Guard | What is actually measured | Fires when |
+| :--- | :--- | :--- |
+| Rapid back-and-forth | Seconds between consecutive **human prompts** — not between assistant records, since one turn emits a record per tool call and would score every tool-heavy session as frantic. Tool results, `isMeta` records and subagent sidechains are excluded | ≥8 measurable gaps **and** strictly more than half are under 20s (equivalent to a median under 20s, without the sort) |
+| Tight debug loop | Every `tool_use` in the session, and the `file_path` of each `Edit`/`MultiEdit`/`Write`/`NotebookEdit`; the two most-edited paths are summed | ≥10 tool calls **and** the top two files account for >60% of *all* tool calls — reading and running things around an edit is normal work, hammering the same two files is not |
+| Ended on a failure | Only the last 20 transcript records, scanned for `is_error: true`, a `<tool_use_error>`, a non-zero failure count (`3 tests failed`), an uppercase `FAILED`, or a Python traceback | Any of those appear in that tail |
+
+Two properties are load-bearing. **Every guard fails open**: an unparseable transcript, absent
+timestamps, or a sample below the minimum runs the retrospective rather than suppressing it, because
+a missed retrospective is invisible and a wrongly suppressed one is a silent loss. And the
+failure guard deliberately does not try to decide whether an error was later resolved — it asks the
+cheaper, more honest question "was the last thing that happened a failure", and `0 failed` does not
+match.
 
 ### 6. Never make the user wait
 

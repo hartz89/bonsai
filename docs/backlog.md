@@ -24,7 +24,7 @@ eval replay) moved up; portability moved down, from headline claim to table stak
 | V-05 | Verify `/init` hand-off, both invocable and fallback paths | S | Docs and local skill list disagree; needs empirical answer |
 | V-06 | Confirm resident cost with `/context` before/after install | S | Validates the README's headline number |
 | V-07 | Log every proposal + verdict + reasoning by hand | M | Manual precursor to P-01. The Phase 1 dataset |
-| V-08 | Confirm flow-state guards fire at a sane rate, and implement the three unbuilt ones | M | Target 40–70% skipped. Turn-gap, edit-loop, and failing-test guards are documented in `etiquette.md` but not yet implemented |
+| V-08 | Confirm flow-state guards fire at a sane rate, and implement the three unbuilt ones | M | Target 40–70% skipped. 2026-07-26: the turn-gap, edit-loop and failing-test guards are now implemented in `retro.sh` and asserted in `tests/run.sh`; heuristics are spelled out in `etiquette.md` rule 5. Open half is live rate-confirmation — offline transcripts can't tell us the real skip rate |
 | V-09 | Dogfood on bonsai itself and record what it proposes | S | Also the README's opening demo |
 
 ---

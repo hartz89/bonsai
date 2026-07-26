@@ -155,7 +155,7 @@ Real issues in what's already shipped. Not features.
 | D-06 | No integration test for the full hook round trip | L | Unit-tested in pieces; the seams are unproven |
 | D-07 | `survey.sh` `gh` calls have no timeout | S | Same as R-07. A slow network could stall `/bonsai:init` |
 | D-08 | Nested `CLAUDE.md` placement is documented but unimplemented | M | Monorepo guidance exists in `placement.md`; no code path produces it |
-| D-09 | The "additive-only" claim is too broad to be true | S | **Live-facing.** `README.md:206` and `docs/capabilities.md:20` claim every comparable tool only ever adds. Cleanup-oriented tooling exists. Narrow it to the claim that holds: nothing else measures whether an artifact was ever *loaded* |
+| ~~D-09~~ | The "additive-only" claim is too broad to be true | S | **Done.** Narrowed in `README.md` and `docs/capabilities.md`: cleanup tooling exists, but it judges an artifact by reading it. What holds is that nothing else records whether an artifact was ever *loaded* |
 | D-10 | Prior-art table is out of date | S | `README.md:198`. Predates several closer projects. Honest positioning means comparing against the strongest available, not the most flattering set |
 | D-11 | Roadmap calls harness-agnosticism a "headline selling point" | S | `roadmap.md:25`. Superseded by the Phase 3 demotion; the cross-cutting commitment stands, the marketing claim doesn't |
 

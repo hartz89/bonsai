@@ -17,7 +17,7 @@ Status: `done` · `partial` · `planned`
 | Enforced application | `apply.py` writes the artifact, files the eval case, records provenance — with a target-path allowlist | A poisoned proposal can't write outside harness paths. Enforced in code, not requested of a model | done |
 | Manual promotion | `/bonsai:promote` runs the same policy interactively | Power users can codify on demand instead of waiting for thresholds | done |
 | Review & apply | `/bonsai:review` renders diffs and applies on approval | The human stays the decision-maker | done |
-| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts, and reports the footprint ledger | The differentiator: every comparable tool only ever adds | done |
+| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts, and reports the footprint ledger | The differentiator: other cleanup tools judge an artifact by reading it. Removal here argues from recorded loads | done |
 | Load tracking | An `InstructionsLoaded` hook logs which instruction artifacts actually load; staleness is measured from real usage | Makes pruning evidence-based rather than a guess. The hook has no output control, so it cannot interrupt | done |
 
 ## Placement intelligence

@@ -203,9 +203,11 @@ There's real work in this space and bonsai overlaps some of it. The honest diffe
 | [UniM0cha/claude-self-improving-skills](https://github.com/UniM0cha/claude-self-improving-skills) | Hermes-style learning loop | Mechanism *selection* across all seven primitives, not just skills |
 | [TerenceBristol/claude-improve](https://github.com/TerenceBristol/claude-improve) | Per-conversation retrospective | Detached and rate-limited, so it costs nothing in your session |
 
-**The one nobody else does: garbage collection.** Every project above is additive-only. A harness that
-only grows is a harness that gets worse at month six, because resident context is a shared attention
-budget. `/bonsai:prune` is the reason this is called bonsai.
+**The one nobody else does: removal on measured evidence.** Cleanup tooling exists — several of the projects
+above audit config for staleness and redundancy. But they all judge an artifact by *reading* it, which yields
+an opinion. bonsai's `InstructionsLoaded` hook records which artifacts actually loaded, so `/bonsai:prune`
+argues from a fact: this rule has not been read in 60 days. Nothing else tracks that, and a harness that
+can't distinguish live config from dead config only grows. It's the reason this is called bonsai.
 
 ## What would make this project stop
 

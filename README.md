@@ -193,15 +193,18 @@ Plus `/bonsai:pause` (and `--resume`) to stop observation for a repo in one step
 
 ## How this differs from prior art
 
-There's real work in this space and bonsai overlaps some of it. The honest differences:
+There's real work in this space and bonsai overlaps some of it. The honest differences, reviewed 2026-07 —
+this landscape moves fast enough that a table more than a quarter old is probably wrong:
 
 | Project | What it does | What bonsai adds |
 | :--- | :--- | :--- |
+| [Kulaxyz/self-learning-skills](https://github.com/Kulaxyz/self-learning-skills) | The closest comparable. Harvests a verified "golden path" from a session into a skill or rule, with promotion gates, artifact triage, and Cursor / `AGENTS.md` adapters | A measured context budget and a removal path. Nothing there tracks an artifact after it's written |
+| [alirezarezvani/ClaudeForge](https://github.com/alirezarezvani/claudeforge) | Generates and maintains `CLAUDE.md`; a 150-line cap enforced deterministically, plus drift and stale-reference audits | Content sourced from observed sessions rather than conversational discovery, and routing beyond `CLAUDE.md` to the other six mechanisms |
+| [Context Cleanup](https://mcpmarket.com/tools/skills/context-cleanup) | Audits `CLAUDE.md`, memory, and skill definitions for redundancy and contradiction — "rule accumulation decay" by name | A lifecycle rather than a one-shot audit: the inventory that added an artifact is the one that decides to remove it |
+| [claude-reflect](https://github.com/jeremylongshore/claude-code-plugins-plus-skills) | Detects in-session corrections and queues them into `CLAUDE.md` | An explicit approval gate, a placement decision, and an expiry on unconfirmed evidence |
 | [obra/superpowers](https://github.com/obra/superpowers) | Large curated skill library | Generates artifacts from *your* project rather than shipping a library |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | Harness optimization: skills, instincts, memory | A measured context budget and a removal path |
-| [ChristopherA's bootstrap seed](https://gist.github.com/ChristopherA/fd2985551e765a86f4fbb24080263a2f) | Self-improving seed prompt in `CLAUDE.md` | Versioned and upgradeable — policy lives in a plugin, not splatted into your file |
-| [UniM0cha/claude-self-improving-skills](https://github.com/UniM0cha/claude-self-improving-skills) | Hermes-style learning loop | Mechanism *selection* across all seven primitives, not just skills |
 | [TerenceBristol/claude-improve](https://github.com/TerenceBristol/claude-improve) | Per-conversation retrospective | Detached and rate-limited, so it costs nothing in your session |
+| `/doctor` (built in) | Trims `CLAUDE.md`, flags unused skills, MCP servers, and slow hooks | Nothing — `/bonsai:init` calls it rather than reimplementing it |
 
 **The one nobody else does: removal on measured evidence.** Cleanup tooling exists — several of the projects
 above audit config for staleness and redundancy. But they all judge an artifact by *reading* it, which yields

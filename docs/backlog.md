@@ -138,7 +138,7 @@ constrains every design decision from now on, but it's no longer something to le
 | ~~C-02~~ | ~~Add verification-date stamps to every `reference/` doc~~ | — | **Done.** Every `reference/` and `adapters/` doc carries a `Sources verified` stamp |
 | C-03 | Watch for native promote/prune shipping upstream | — | Ongoing. Triggers the fold-in-and-archive path |
 | C-04 | Re-verify the `/init` vs `/doctor` invocability question | S | Explicitly flagged uncertain in `sources.md` |
-| C-05 | Extend the freshness sweep to differentiator claims | M | C-01 re-verifies `sources.md`; nothing re-verifies "nobody else does X." Such a claim went stale in under a month and was caught only by being asked directly. Every differentiator needs a date and a re-check, same as every citation |
+| C-05 | Extend the freshness sweep to differentiator claims | M | C-01 re-verifies `sources.md`; nothing re-verifies "nobody else does X." Such a claim went stale in under a month and was caught only by being asked directly. Every differentiator needs a date and a re-check, same as every citation. First concrete watch item (2026-07-26): ClaudeForge already registers an `InstructionsLoaded` hook — as a line-cap validator, not a usage record, so the load-measurement claim holds, but it's one competitor design decision from false |
 | ~~C-06~~ | ~~Record the landscape review so it isn't re-done~~ | — | **Done.** `.local/prior-art.md` (gitignored — the conclusions belong in the docs, the project-by-project reasoning doesn't) |
 
 ---
@@ -166,12 +166,14 @@ Real issues in what's already shipped. Not features.
 
 ## Picking up work
 
-Phase 0 first, and V-02/V-03/V-04 before anything else — they're cheap and they de-risk the most.
+Phase 0 first, and V-02/V-03/V-04 before anything else — they're cheap and they de-risk the most. Note
+what Phase 0 requires: *live sessions*, not more code. The 2026-07-26 batch cleared most of what could be
+built offline (P-09/P-11, R-01, the V-08 guards, the small defects); what remains in Phase 0 is using
+bonsai for real and writing down what happens.
 
-One exception that doesn't wait for Phase 0: **D-09/D-10/D-11**. An overclaim in a public README is a
-correctness bug, and it costs an hour to fix.
-
-After Phase 0, lead with **P-09**. The claim worth defending is measurement, not learning.
+Good offline picks while validation runs, in order: **X-01a** and **C-04** (cheap doc-verification with
+empirical checks), **X-00** (the capability matrix that gates every adapter), **D-12** (verify what
+`allowed-tools` actually enforces), then **P-01** (Phase 1's lead — outcome recording).
 
 Anything touching behavior described in `reference/` updates that doc in the same change, with a citation.
 See [CONTRIBUTING.md](../CONTRIBUTING.md).

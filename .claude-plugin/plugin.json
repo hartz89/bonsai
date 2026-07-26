@@ -1,0 +1,45 @@
+{
+  "name": "bonsai",
+  "version": "0.1.0",
+  "description": "Grows your agent config as you work, and prunes it before it rots.",
+  "author": {
+    "name": "Ryan Hartzfeld"
+  },
+  "homepage": "https://github.com/hartz89/bonsai",
+  "license": "MIT",
+  "keywords": [
+    "harness",
+    "context-engineering",
+    "skills",
+    "self-improving",
+    "claude-md"
+  ],
+  "userConfig": {
+    "retrospective": {
+      "type": "boolean",
+      "title": "Observe sessions automatically",
+      "description": "After a session ends, run a cheap Haiku pass over the transcript to spot patterns worth codifying. Runs detached — never blocks you. Turn this off to make bonsai fully manual (/bonsai:promote still works).",
+      "default": true
+    },
+    "daily_limit": {
+      "type": "number",
+      "title": "Max retrospectives per day",
+      "description": "Cost ceiling. Sessions beyond this are skipped, not queued.",
+      "default": 6,
+      "min": 0,
+      "max": 50
+    },
+    "retrospective_model": {
+      "type": "string",
+      "title": "Model for observation",
+      "description": "Model used for the detached retrospective pass. Haiku is sufficient; raise it only if observations come back low-quality.",
+      "default": "haiku"
+    },
+    "auto_accept_low_risk": {
+      "type": "boolean",
+      "title": "Auto-accept low-risk artifacts (express mode only)",
+      "description": "Let bonsai apply path-scoped rules and memory topic files without review. Root CLAUDE.md, hooks, and permissions always require review regardless of this setting.",
+      "default": false
+    }
+  }
+}

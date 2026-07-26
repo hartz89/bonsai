@@ -1,0 +1,57 @@
+{
+  "_comment": "bonsai speaks at session boundaries only. No Stop hook, no PostToolUse hook, no UserPromptSubmit hook, and nothing that can block — see reference/etiquette.md rule 1.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"],
+            "timeout": 20,
+            "async": true,
+            "statusMessage": "bonsai: noting patterns"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"],
+            "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

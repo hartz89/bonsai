@@ -1,0 +1,15 @@
+{
+  "name": "bonsai",
+  "owner": {
+    "name": "Ryan Hartzfeld",
+    "url": "https://github.com/hartz89"
+  },
+  "plugins": [
+    {
+      "name": "bonsai",
+      "source": "./",
+      "description": "Grows your agent config as you work, and prunes it before it rots.",
+      "whenToUse": "Install in any repo where you want CLAUDE.md, rules, skills, and subagents to be proposed and maintained from how the project is actually developed."
+    }
+  ]
+}

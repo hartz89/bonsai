@@ -1,0 +1,17 @@
+# bonsai local state — see reference/git-strategy.md
+# Observations contain verbatim excerpts of your conversations. Machine-local by design.
+.claude/bonsai/observations.jsonl
+.claude/bonsai/proposals/
+.claude/bonsai/archive/
+.claude/bonsai/.state/
+
+# Personal instructions
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Worktrees bonsai creates for isolated harness commits
+.bonsai-worktrees/
+
+# OS / editor
+.DS_Store
+*.swp

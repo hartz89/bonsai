@@ -1,25 +1,47 @@
 {
-  "_comment": "bonsai dev install — dogfooding. A normal consumer gets these from the plugin's hooks/hooks.json with ${CLAUDE_PLUGIN_ROOT}. Here they point at the repo itself.",
+  "_comment": "bonsai dev install \u2014 dogfooding. A normal consumer gets these from the plugin's hooks/hooks.json with ${CLAUDE_PLUGIN_ROOT}. Here they point at the repo itself.",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "startup",
         "hooks": [
-          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/pending.sh"], "timeout": 5 }
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/pending.sh"
+            ],
+            "timeout": 5
+          }
         ]
       },
       {
         "matcher": "resume",
         "hooks": [
-          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/pending.sh"], "timeout": 5 }
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/pending.sh"
+            ],
+            "timeout": 5
+          }
         ]
       }
     ],
     "SessionEnd": [
       {
         "hooks": [
-          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/retro.sh"],
-            "timeout": 20, "async": true, "statusMessage": "bonsai: noting patterns" }
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/retro.sh"
+            ],
+            "timeout": 20,
+            "async": true,
+            "statusMessage": "bonsai: noting patterns"
+          }
         ]
       }
     ],
@@ -27,7 +49,43 @@
       {
         "matcher": "auto",
         "hooks": [
-          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/retro.sh"], "timeout": 20, "async": true }
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/retro.sh"
+            ],
+            "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "matcher": "session_start",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "path_glob_match",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5
+          }
         ]
       }
     ]

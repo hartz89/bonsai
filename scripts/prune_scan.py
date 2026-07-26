@@ -68,6 +68,25 @@ def parse_iso(value: object) -> datetime | None:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
+def exercised_dates(project: str) -> dict[str, datetime]:
+    """Most recent load date per artifact, from the append-only log touch_artifact.sh writes.
+
+    The inventory's `last_exercised` field is only ever a fallback: nothing writes it during normal
+    operation, because a hook appending to a flat log is far cheaper than rewriting JSON on every
+    instruction load.
+    """
+    out: dict[str, datetime] = {}
+    log = os.path.join(project, ".claude", "bonsai", ".state", "exercised")
+    for line in read(log).splitlines():
+        parts = line.strip().split(" ", 1)
+        if len(parts) != 2:
+            continue
+        when, rel = parse_iso(parts[0]), parts[1].strip()
+        if when and (rel not in out or when > out[rel]):
+            out[rel] = when
+    return out
+
+
 def detect_tools(project: str) -> set[str]:
     found = set()
     for tool, candidates in TOOL_CONFIGS.items():
@@ -104,6 +123,7 @@ def main() -> int:
         inventory = {}
     artifacts = inventory.get("artifacts", []) if isinstance(inventory, dict) else []
     tracked = {a.get("target") for a in artifacts if isinstance(a, dict)}
+    loaded = exercised_dates(project)
 
     for art in artifacts:
         if not isinstance(art, dict):
@@ -115,15 +135,22 @@ def main() -> int:
             add("orphan", target, "inventory entry has no file on disk", id=art.get("id"))
             continue
 
-        # Staleness: never exercised, and old enough that it should have been by now. Enforced
-        # constraints are exempt — a guardrail that never fires is working correctly.
+        # Staleness: not loaded in a long time, or never. Enforced constraints are exempt — a guardrail
+        # that never fires is working correctly, not dead.
         if art.get("mechanism") in ("hook", "permission"):
             continue
         created = parse_iso(art.get("created"))
-        exercised = parse_iso(art.get("last_exercised"))
-        if not exercised and created and (now - created) > timedelta(days=STALE_AFTER_DAYS):
-            add("stale", target, f"never exercised since {created.date()}",
-                id=art.get("id"), mechanism=art.get("mechanism"))
+        exercised = loaded.get(target) or parse_iso(art.get("last_exercised"))
+        age_ref = exercised or created
+        stale_for = (now - age_ref).days if age_ref else None
+
+        if stale_for is not None and stale_for > STALE_AFTER_DAYS:
+            detail = (
+                f"last loaded {exercised.date()} ({stale_for}d ago)" if exercised
+                else f"never loaded since {created.date()} ({stale_for}d ago)"
+            )
+            add("stale", target, detail, id=art.get("id"), mechanism=art.get("mechanism"),
+                days_stale=stale_for, ever_loaded=bool(exercised))
 
     # --- rules: scoping and conflicts --------------------------------------------
     by_topic: dict[str, list[str]] = {}
@@ -197,6 +224,13 @@ def main() -> int:
         "findings": findings,
         "summary": summary,
         "artifacts_tracked": len(artifacts),
+        "load_tracking": {
+            "artifacts_with_load_data": len(loaded),
+            "active": bool(loaded),
+            "hint": None if loaded else
+                    "No load data yet. Staleness is measured from creation date until the "
+                    "InstructionsLoaded hook has run; treat stale findings as weak evidence.",
+        },
         "tools_detected": sorted(tools),
         "note": "Detection only. Judgment belongs to the model; see skills/prune/SKILL.md step 3.",
     }, indent=2))

@@ -1,5 +1,5 @@
 {
-  "_comment": "bonsai speaks at session boundaries only. No Stop hook, no PostToolUse hook, no UserPromptSubmit hook, and nothing that can block — see reference/etiquette.md rule 1.",
+  "_comment": "bonsai speaks at session boundaries only. No Stop hook, no PostToolUse hook, no UserPromptSubmit hook, and nothing that can block \u2014 see reference/etiquette.md rule 1.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,7 +8,9 @@
           {
             "type": "command",
             "command": "sh",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"
+            ],
             "timeout": 5
           }
         ]
@@ -19,7 +21,9 @@
           {
             "type": "command",
             "command": "sh",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/pending.sh"
+            ],
             "timeout": 5
           }
         ]
@@ -31,7 +35,9 @@
           {
             "type": "command",
             "command": "sh",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"
+            ],
             "timeout": 20,
             "async": true,
             "statusMessage": "bonsai: noting patterns"
@@ -46,9 +52,39 @@
           {
             "type": "command",
             "command": "sh",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"
+            ],
             "timeout": 20,
             "async": true
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "matcher": "session_start",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "path_glob_match",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5
           }
         ]
       }

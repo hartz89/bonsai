@@ -132,6 +132,32 @@ is "eval case was filed" "$(test -f "$d/.claude/bonsai/evals/good.md" && echo ye
 rm -rf "$d"
 
 # ---------------------------------------------------------------------------
+printf '\nstaleness: load tracking (scripts/touch_artifact.sh)\n'
+d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
+mkdir -p "$d/.claude/rules"; printf 'x\n' > "$d/.claude/rules/old.md"; printf 'y\n' > "$d/.claude/rules/fresh.md"
+cat > "$d/.claude/bonsai/inventory.json" <<EOF
+{"artifacts":[
+ {"id":"old","target":".claude/rules/old.md","mechanism":"rule","created":"2026-01-01T00:00:00Z"},
+ {"id":"fresh","target":".claude/rules/fresh.md","mechanism":"rule","created":"2026-01-01T00:00:00Z"},
+ {"id":"guard","target":".claude/settings.json","mechanism":"hook","created":"2026-01-01T00:00:00Z"}
+],"pruned_count":0}
+EOF
+stale_list() { python3 "$ROOT/scripts/prune_scan.py" --project "$d" | python3 -c "
+import json,sys
+print(','.join(sorted(f['target'] for f in json.load(sys.stdin)['findings'] if f['category']=='stale')))"; }
+is "unloaded artifacts are stale" "$(stale_list)" ".claude/rules/fresh.md,.claude/rules/old.md"
+printf '{"file_path":"%s/.claude/rules/fresh.md"}' "$d" | sh "$ROOT/scripts/touch_artifact.sh"
+is "a loaded artifact stops being stale" "$(stale_list)" ".claude/rules/old.md"
+is "enforced constraints are never stale" "$(stale_list | grep -c settings.json || true)" "0"
+i=0; while [ $i -lt 4 ]; do printf '{"file_path":"%s/.claude/rules/fresh.md"}' "$d" | sh "$ROOT/scripts/touch_artifact.sh"; i=$((i+1)); done
+is "load log is idempotent per day" "$(wc -l < "$d/.claude/bonsai/.state/exercised" | tr -d ' ')" "1"
+printf '{"file_path":"/elsewhere/.claude/rules/x.md"}' | sh "$ROOT/scripts/touch_artifact.sh"
+is "artifacts outside the project are ignored" "$(wc -l < "$d/.claude/bonsai/.state/exercised" | tr -d ' ')" "1"
+touch "$d/.claude/bonsai/paused"
+printf '{"file_path":"%s/.claude/rules/old.md"}' "$d" | sh "$ROOT/scripts/touch_artifact.sh"
+is "respects pause" "$(wc -l < "$d/.claude/bonsai/.state/exercised" | tr -d ' ')" "1"
+rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+
 printf '\nsurvey: tier and mode detection (reference/git-strategy.md)\n'
 d=$(mktemp -d); git init -q "$d"
 (cd "$d" && git config user.email a@b.c && git config user.name A && echo x > f \

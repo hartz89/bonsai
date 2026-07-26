@@ -31,8 +31,9 @@ eval replay) moved up; portability moved down, from headline claim to table stak
 
 ## Phase 1 — Precision
 
-**P-09 leads this phase.** Auditing a rule by reading it yields an opinion; measuring whether it was ever
-loaded yields a fact. That distinction is the whole basis for pruning, and it's half-built.
+The premise of this phase: auditing a rule by reading it yields an opinion; measuring whether it was ever
+loaded yields a fact. P-09 built that measurement (landed 2026-07-26). **P-01 now leads** — nothing can be
+tuned until outcomes are recorded.
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
@@ -148,7 +149,7 @@ Real issues in what's already shipped. Not features.
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
-| ~~D-01~~ | ~~`last_exercised` is never written~~ | — | **Fixed.** See P-05. Skills and subagents still untracked → P-09 |
+| ~~D-01~~ | ~~`last_exercised` is never written~~ | — | **Fixed.** See P-05. Skills and subagents tracked since 2026-07-26 (P-09); only the hand-typed `/name` path remains → P-12 |
 | ~~D-02~~ | ~~No `/bonsai:pause` test coverage~~ | — | **Done.** `tests/run.sh` now asserts the skill's `disable-model-invocation: true`, and that it documents the same `.claude/bonsai/paused` marker `pending.sh` and `retro.sh` actually check |
 | D-03 | `retro.sh` field parsing is `sed`-based | S | Fine for well-formed hook JSON; would break on escaped quotes in a path |
 | D-04 | Rate-limit slot is claimed before work succeeds | S | A crashed pass burns the hour. Intentional (prevents thundering herd) but worth revisiting |
@@ -159,6 +160,7 @@ Real issues in what's already shipped. Not features.
 | ~~D-09~~ | The "additive-only" claim is too broad to be true | S | **Done.** Narrowed in `README.md` and `docs/capabilities.md`: cleanup tooling exists, but it judges an artifact by reading it. What holds is that nothing else records whether an artifact was ever *loaded* |
 | ~~D-10~~ | Prior-art table is out of date | S | **Done.** Rebuilt against the strongest current set (self-learning-skills, ClaudeForge, Context Cleanup, claude-reflect) and dated, since it goes stale in about a quarter. Re-verify under C-05 |
 | ~~D-11~~ | Roadmap calls harness-agnosticism a "headline selling point" | S | **Done.** Cross-cutting commitment 1 now reads "table stakes, not a differentiator" and points at Phase 3 for the reasoning. The architectural discipline stands; the marketing claim is gone |
+| D-12 | `skills/init` `allowed-tools` doesn't permit the scripts it invokes | S | Frontmatter allows `Bash(git *)`/`Bash(gh *)` but not `Bash(sh *)` or `Bash(python3 *)`, yet the skill runs `survey.sh`, `preflight.sh`, and `footprint.py`. Verify what the harness actually enforces, then fix the frontmatter — and audit the other four skills for the same gap |
 
 ---
 

@@ -36,9 +36,10 @@ loaded yields a fact. That distinction is the whole basis for pruning, and it's 
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
-| P-09 | Extend load tracking to skills and subagents | M | **Lead item.** `InstructionsLoaded` covers CLAUDE.md and rules only. Needs `SubagentStart` (verify the `agent_type` payload field) and a transcript-based signal for skills |
+| ~~P-09~~ | ~~Extend load tracking to skills and subagents~~ | — | **Done.** `agent_type` verified: `SubagentStart` carries it, it has no output control, and it holds the frontmatter `name`, not the filename. Subagents are now fully tracked. Skills go through a `Skill`-matched `PostToolUse`, which sees model invocations only — no transcript parsing needed, and no `SkillStart` event exists. The hand-typed `/name` path is out of reach on principle, not on effort → **P-12** |
 | P-10 | Add a verification signal to the promotion gate | M | Frequency is a weak bar on its own — three repetitions of a bad habit clears it. Add a quality dimension: did a verification pass (green build, passing test), is there a named failure the pattern avoids, was a dead end ruled out? Touches `thresholds.md`, `BASE_THRESHOLDS`, and `merge_observations.py` |
 | P-11 | Surface load-tracking evidence in the prune report | S | `prune_scan.py` computes `exercised_dates()` but the user-facing line doesn't say "loaded 0 times in 60 days." The evidence is the product; show it |
+| P-12 | Track hand-typed `/skill` invocations | M | The gap P-09 left. `PostToolUse` on the `Skill` tool sees model invocations; typing `/name` bypasses the tool entirely and only `UserPromptExpansion` observes it — an event on the user's prompt that can block the expansion, which `etiquette.md` rule 1 forbids. Needs either an upstream side-effect-only event, or a transcript-derived signal computed off the hot path (`retro.sh` already reads the transcript at `SessionEnd`). Until then `prune_scan.py` reports skill staleness as `coverage: "partial"` |
 | P-01 | Record accept/reject/edit outcomes per proposal in the inventory | M | Nothing can be tuned without this |
 | P-02 | Capture reject reasons as structured categories | S | "Wrong mechanism" vs "not a real pattern" imply opposite fixes |
 | P-03 | Feed outcomes back into confidence scoring | M | Patterns resembling past rejections should score lower |

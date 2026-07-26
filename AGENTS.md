@@ -86,9 +86,11 @@ tier and mode. Expect the hooks to fire while working here.
 
 ## Gotchas
 
-- **Staleness data accrues over time.** The `InstructionsLoaded` hook logs loads to
-  `.claude/bonsai/.state/exercised`; until it has run, `prune_scan.py` measures staleness from creation date
-  and reports `load_tracking.active: false`. Skills and subagents aren't tracked yet (backlog P-09).
+- **Staleness data accrues over time.** `InstructionsLoaded` (rules), `SubagentStart` (agents), and a
+  `Skill`-matched `PostToolUse` (skills) all log to `.claude/bonsai/.state/exercised`; until they have run,
+  `prune_scan.py` measures staleness from creation date and reports `load_tracking.active: false`. Skill
+  coverage is partial by design — a hand-typed `/name` is invisible, since the only event that sees it can
+  block the user's prompt (backlog P-12).
 - **`/doctor` is a bundled skill** (model-invocable); **`/init` is documented as a built-in command** (not
   invocable) though some builds expose an `init` skill. Attempt, fall back, assert nothing.
 - **`pluginConfigs` is read from user settings only** — project settings are deliberately ignored so a cloned

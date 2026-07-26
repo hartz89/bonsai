@@ -1,6 +1,6 @@
 # Etiquette: polite but proactive
 
-*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+*Sources verified 2026-07-26. A stale stamp is a bug — see `docs/backlog.md` C-01.*
 
 bonsai's failure mode is not "missed a pattern." It's "became annoying." An annoying harness tool gets
 uninstalled, and then it improves nothing.
@@ -25,6 +25,16 @@ Specifically forbidden in bonsai's own machinery:
 - **No blocking hook, ever.** bonsai never returns exit code 2 and never sets `decision: block`. It has
   no business stopping anyone's work. (bonsai may *propose* a blocking hook for the user's project —
   that's the user's guardrail, approved by them, and not bonsai's own behavior.)
+- No `UserPromptExpansion` hook. It is `UserPromptSubmit`'s sibling: same prompt path, and it can block
+  the expansion. This costs bonsai the only signal that sees a `/skill` typed by hand, and that price is
+  paid rather than negotiated — see `reference/determinism.md` § Usage tracking coverage.
+
+The mid-session exception, and it is the only one: **silent usage logging**. `InstructionsLoaded`,
+`SubagentStart`, and a `Skill`-matched `PostToolUse` each run `touch_artifact.sh`, which appends one line
+to a file and exits. The first two have no output control the docs would honour; the third is declared
+`async`, which drops `decision`, `permissionDecision`, and `continue`. Nothing reaches context, nothing
+reaches the user, and nothing waits on a model. A signal that cannot be observed is not an interruption —
+but the bar for adding another one is exactly this: prove the event has no path to the user's attention.
 
 ### 2. One line, once
 

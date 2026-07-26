@@ -3,7 +3,8 @@
 Every normative claim in `reference/` traces to one of these. When guidance here conflicts with a
 source, the source wins — open an issue.
 
-Verified 2026-07-25 against Claude Code v2.1.2xx docs.
+Verified 2026-07-25 against Claude Code v2.1.2xx docs. Hooks re-verified 2026-07-26 for usage tracking
+(`SubagentStart`, `PostToolUse` on the `Skill` tool, `UserPromptExpansion`, `async`).
 
 ## Primary — mechanism selection and context cost
 
@@ -23,6 +24,11 @@ Verified 2026-07-25 against Claude Code v2.1.2xx docs.
 | [Skills](https://code.claude.com/docs/en/skills) | Frontmatter schema; `disable-model-invocation`; `context: fork` + `agent`; skill locations and precedence; description truncated at 1,536 chars |
 | [Subagents](https://code.claude.com/docs/en/sub-agents) | Frontmatter schema including `model`, `tools`, `maxTurns`, `effort`, `memory`, `skills`; what loads at startup |
 | [Hooks](https://code.claude.com/docs/en/hooks) | Event list; hook types (`command`, `http`, `mcp_tool`, `prompt`, `agent`); per-event output control |
+| [Hooks § SubagentStart](https://code.claude.com/docs/en/hooks#subagentstart) | *Verified 2026-07-26.* Fires when a subagent is spawned; input carries `agent_id` and `agent_type`; matcher filters on agent type. Output control: **No** — "Shows stderr to user only", and it "can't block subagent creation" |
+| [Hooks § common input fields](https://code.claude.com/docs/en/hooks#common-input-fields) | *Verified 2026-07-26.* `agent_type` is the custom subagent's frontmatter `name`, "not the filename", and for plugin subagents "the plugin-scoped identifier such as `my-plugin:reviewer`". It is also present on *any* event firing inside a subagent — hence `touch_artifact.sh` checks `hook_event_name` before trusting it |
+| [Hooks § UserPromptExpansion](https://code.claude.com/docs/en/hooks#userpromptexpansion) | *Verified 2026-07-26.* The only event that sees a hand-typed `/skill`: "a `PreToolUse` hook matching the `Skill` tool fires only when Claude calls the tool, but typing `/skillname` directly bypasses `PreToolUse`." It can block the expansion, so `etiquette.md` rule 1 rules it out. There is no `SkillStart`/`SkillEnd` event |
+| [Hooks § run hooks in the background](https://code.claude.com/docs/en/hooks#run-hooks-in-the-background) | *Verified 2026-07-26.* `"async": true` on a `command` hook runs it without blocking, and "response fields like `decision`, `permissionDecision`, and `continue` have no effect" — what makes a `PostToolUse` usage log safe |
+| [Tools reference](https://code.claude.com/docs/en/tools-reference) | *Verified 2026-07-26.* `Skill` is a real tool name usable as a hook matcher: a skill "runs through the existing `Skill` tool rather than adding a new tool entry" |
 | [Plugins reference](https://code.claude.com/docs/en/plugins-reference) | Plugin layout; `plugin.json` schema; `userConfig`; `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_PLUGIN_DATA}`; `pluginConfigs` read only from user/managed settings |
 | [Commands](https://code.claude.com/docs/en/commands) | Which `/`-entries are built-in commands vs bundled skills — determines what bonsai can invoke |
 
@@ -54,3 +60,10 @@ Recorded so they get re-verified rather than calcifying:
 - **`prompt` and `agent` hook types** are documented experimental. bonsai does not depend on them; the
   retrospective runs as a `command` hook shelling out to a headless process instead.
 - **Agent teams** are experimental and disabled by default. Out of scope for v1.
+- **The `Skill` tool's `tool_input` schema.** *Checked 2026-07-26.* The hooks reference enumerates
+  `tool_input` fields for `Bash`, `Write`, `Edit`, `Read`, `Glob`, `Grep`, `WebFetch`, `WebSearch`,
+  `Agent`, `AskUserQuestion`, and `ExitPlanMode` — but not `Skill`. `touch_artifact.sh` reads
+  `tool_input.skill` because that is the field the runtime presents, not because a doc says so, and it
+  requires the resolved path to exist under `.claude/skills/` before logging anything. If the field is
+  renamed upstream, skill tracking silently stops rather than recording the wrong artifact. Re-verify
+  when the tool-input tables gain a `Skill` entry.

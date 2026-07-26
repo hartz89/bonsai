@@ -1,5 +1,5 @@
 {
-  "_comment": "bonsai speaks at session boundaries only. No Stop hook, no PostToolUse hook, no UserPromptSubmit hook, and nothing that can block \u2014 see reference/etiquette.md rule 1.",
+  "_comment": "bonsai speaks at session boundaries only. No Stop hook, no UserPromptSubmit hook, and nothing that can block \u2014 see reference/etiquette.md rule 1. The one PostToolUse entry is matched to the Skill tool, declared async, and writes a line to a log; it returns nothing and cannot reach the user.",
   "hooks": {
     "SessionStart": [
       {
@@ -56,6 +56,37 @@
               "${CLAUDE_PLUGIN_ROOT}/scripts/retro.sh"
             ],
             "timeout": 20,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/touch_artifact.sh"
+            ],
+            "timeout": 5,
             "async": true
           }
         ]

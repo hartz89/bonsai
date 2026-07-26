@@ -274,6 +274,52 @@ has "unusable project explains itself on stderr" "$err" "cannot cd"
 # The init skill must gate on pre-flight (R-01; wiring the ladder into every skill is R-02).
 has "init runs pre-flight first" "$(cat "$ROOT/skills/init/SKILL.md")" "preflight.sh"
 # --- end: pre-flight (R-01) --------------------------------------------------
+# --- begin: skill/subagent usage tracking + load evidence (P-09, P-11) ------
+printf '\nstaleness: subagents, skills, and reported load evidence\n'
+d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
+mkdir -p "$d/.claude/agents" "$d/.claude/skills/deploy" "$d/.claude/rules"
+printf -- '---\nname: reviewer\n---\nx\n' > "$d/.claude/agents/reviewer.md"
+printf -- '---\nname: renamed-agent\n---\nx\n' > "$d/.claude/agents/on-disk.md"
+printf -- '---\nname: deploy\n---\nx\n' > "$d/.claude/skills/deploy/SKILL.md"
+printf 'x\n' > "$d/.claude/rules/r.md"
+t() { sh "$ROOT/scripts/touch_artifact.sh"; }
+log="$d/.claude/bonsai/.state/exercised"
+logged() { [ -f "$log" ] && cut -d' ' -f2- "$log" | sort -u | tr '\n' ',' || printf ''; }
+
+printf '{"hook_event_name":"SubagentStart","agent_type":"reviewer","agent_id":"a1"}' | t
+is "SubagentStart maps agent_type to the agent file" "$(logged)" ".claude/agents/reviewer.md,"
+printf '{"hook_event_name":"SubagentStart","agent_type":"renamed-agent","agent_id":"a2"}' | t
+has "resolves a frontmatter name that differs from the filename" "$(logged)" ".claude/agents/on-disk.md"
+printf '{"hook_event_name":"SubagentStart","agent_type":"bonsai:scout"}' | t
+lacks "plugin-scoped agents are not project artifacts" "$(logged)" "scout"
+printf '{"hook_event_name":"SubagentStart","agent_type":"../../etc/passwd"}' | t
+lacks "path traversal in agent_type is dropped" "$(logged)" "passwd"
+printf '{"hook_event_name":"SubagentStart","agent_type":"Explore"}' | t
+lacks "unknown agents are not invented" "$(logged)" "Explore"
+
+printf '{"hook_event_name":"PostToolUse","tool_name":"Skill","tool_input":{"skill":"deploy"}}' | t
+has "PostToolUse on Skill maps to SKILL.md" "$(logged)" ".claude/skills/deploy/SKILL.md"
+printf '{"hook_event_name":"PostToolUse","tool_name":"Skill","tool_input":{"skill":"nope"}}' | t
+lacks "unknown skills are not invented" "$(logged)" "nope"
+printf '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | t
+is "non-Skill tools log nothing" "$(logged | tr ',' '\n' | grep -c .)" "3"
+
+# agent_type rides along on every event fired inside a subagent; file_path still wins.
+printf '{"hook_event_name":"InstructionsLoaded","agent_type":"reviewer","file_path":"%s/.claude/rules/r.md"}' "$d" | t
+has "a load inside a subagent credits the rule, not the agent" "$(logged)" ".claude/rules/r.md"
+rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+
+# bonsai's own hooks must stay unable to reach the user (reference/etiquette.md rule 1).
+hj=$(cat "$ROOT/hooks/hooks.json")
+lacks "no Stop hook" "$hj" '"Stop"'
+lacks "no UserPromptSubmit hook" "$hj" '"UserPromptSubmit"'
+lacks "no UserPromptExpansion hook" "$hj" '"UserPromptExpansion"'
+is "every PostToolUse hook is async and Skill-matched" \
+  "$(printf '%s' "$hj" | python3 -c "
+import json,sys
+e=json.load(sys.stdin)['hooks'].get('PostToolUse',[])
+print(all(m.get('matcher')=='Skill' and all(h.get('async') for h in m['hooks']) for m in e))")" "True"
+# --- end: skill/subagent usage tracking + load evidence ---------------------
 
 # ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"

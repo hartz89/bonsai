@@ -354,5 +354,26 @@ print(all(m.get('matcher')=='Skill' and all(h.get('async') for h in m['hooks']) 
 # --- end: skill/subagent usage tracking + load evidence ---------------------
 
 # ---------------------------------------------------------------------------
+# BEGIN R-07/D-07 block
+printf '\nsurvey: gh calls have a timeout (docs/backlog.md R-07/D-07)\n'
+BIN=$(mktemp -d)
+cat > "$BIN/gh" <<'EOF'
+#!/bin/sh
+sleep 30
+EOF
+chmod +x "$BIN/gh"
+d=$(mktemp -d); git init -q "$d"
+(cd "$d" && git config user.email a@b.c && git config user.name A && echo x > f \
+  && git add f >/dev/null && git commit -qm "initial") >/dev/null 2>&1
+start=$(date +%s)
+out=$(PATH="$BIN:$PATH" sh "$ROOT/scripts/survey.sh" --project "$d")
+elapsed=$(( $(date +%s) - start ))
+is "a hanging gh does not stall the survey past its timeout" "$([ "$elapsed" -lt 25 ] && echo yes)" "yes"
+prot=$(printf '%s' "$out" | python3 -c "import json,sys;print(json.load(sys.stdin)['repo']['branch_protection'])")
+is "a timed-out gh degrades exactly like a missing gh" "$prot" "unknown"
+rm -rf "$d" "$BIN"
+# END R-07/D-07 block
+
+# ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

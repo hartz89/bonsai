@@ -63,7 +63,7 @@ Lands during Phase 0: a missing dependency would silently invalidate validation 
 | R-04 | `merge_observations.py` fallback or graceful off | M | Hardest case: it's on the detached path and owns the counters. Likely "observation off, say why" rather than a shell reimplementation |
 | R-05 | Windows support: PowerShell hook variants | L | Hooks accept `shell: "powershell"`. Today bonsai is macOS/Linux-only and doesn't say so |
 | R-06 | Assert the pure-`sh` invariant in tests | S | Fail if `pending.sh`/`retro.sh` ever gain a Python dependency |
-| R-07 | Add timeouts to `gh` calls in `survey.sh` | S | Same as D-07. A slow network shouldn't stall `/bonsai:init` |
+| ~~R-07~~ | ~~Add timeouts to `gh` calls in `survey.sh`~~ | — | **Done.** Portable watchdog (`with_timeout`, `GH_TIMEOUT=5`) in `survey.sh` — no reliance on `timeout(1)`, absent on stock macOS. Same as D-07 |
 
 ---
 
@@ -154,7 +154,7 @@ Real issues in what's already shipped. Not features.
 | D-04 | Rate-limit slot is claimed before work succeeds | S | A crashed pass burns the hour. Intentional (prevents thundering herd) but worth revisiting |
 | D-05 | `prune_scan.py` `redundant` detection is keyword-based | M | Will produce false positives; `prune` is report-only so the blast radius is low |
 | D-06 | No integration test for the full hook round trip | L | Unit-tested in pieces; the seams are unproven |
-| D-07 | `survey.sh` `gh` calls have no timeout | S | Same as R-07. A slow network could stall `/bonsai:init` |
+| ~~D-07~~ | ~~`survey.sh` `gh` calls have no timeout~~ | — | **Done.** Same as R-07 |
 | D-08 | Nested `CLAUDE.md` placement is documented but unimplemented | M | Monorepo guidance exists in `placement.md`; no code path produces it |
 | ~~D-09~~ | The "additive-only" claim is too broad to be true | S | **Done.** Narrowed in `README.md` and `docs/capabilities.md`: cleanup tooling exists, but it judges an artifact by reading it. What holds is that nothing else records whether an artifact was ever *loaded* |
 | ~~D-10~~ | Prior-art table is out of date | S | **Done.** Rebuilt against the strongest current set (self-learning-skills, ClaudeForge, Context Cleanup, claude-reflect) and dated, since it goes stale in about a quarter. Re-verify under C-05 |

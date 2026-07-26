@@ -17,6 +17,22 @@ j_str() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/ /g'; }
 lines()  { [ -f "$1" ] && wc -l < "$1" | tr -d ' ' || printf '0'; }
 exists() { [ -e "$1" ] && printf 'true' || printf 'false'; }
 
+# Portable watchdog for network calls (gh). Stock macOS ships no timeout(1), so background the
+# command and kill it ourselves after $1 seconds. A kill leaves a nonzero exit status, which every
+# caller below already treats the same as "gh absent or errored" — a slow network degrades exactly
+# like a missing `gh`, never an error.
+GH_TIMEOUT=5
+with_timeout() {
+    secs="$1"; shift
+    "$@" &
+    pid=$!
+    ( sleep "$secs" 2>/dev/null; kill -9 "$pid" 2>/dev/null ) &
+    watcher=$!
+    wait "$pid" 2>/dev/null; status=$?
+    kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null
+    return "$status"
+}
+
 # --- instruction files -------------------------------------------------------
 CLAUDE_MD_LINES=$(lines CLAUDE.md)
 CLAUDE_MD_NESTED_LINES=$(lines .claude/CLAUDE.md)
@@ -109,10 +125,10 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
         | grep -cE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)(\([^)]+\))?!?:' 2>/dev/null || printf 0)
     [ "$conv" -ge 15 ] 2>/dev/null && CONVENTION=conventional
 
-    if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-        slug=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || printf '')
+    if command -v gh >/dev/null 2>&1 && with_timeout "$GH_TIMEOUT" gh auth status >/dev/null 2>&1; then
+        slug=$(with_timeout "$GH_TIMEOUT" gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || printf '')
         if [ -n "$slug" ]; then
-            if gh api "repos/$slug/branches/$DEFAULT_BRANCH/protection" >/dev/null 2>&1; then
+            if with_timeout "$GH_TIMEOUT" gh api "repos/$slug/branches/$DEFAULT_BRANCH/protection" >/dev/null 2>&1; then
                 PROTECTED=true
             else
                 PROTECTED=false

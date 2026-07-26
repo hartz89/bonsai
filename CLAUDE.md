@@ -4,9 +4,6 @@
 
 - Use plan mode for changes to `reference/` or `scripts/`. `reference/` is the specification and `scripts/`
   enforce it, so both deserve a design pass before edits.
-- When editing `reference/`, re-read the cited source in `reference/sources.md` first. Docs move fast, and a
-  confidently wrong reference doc is the project's worst failure mode.
-- Run `sh tests/run.sh` before any commit. It's fast and has no dependencies.
 
 ## Harness maintenance
 

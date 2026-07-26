@@ -31,7 +31,9 @@ No build step, no package manager, no runtime dependencies beyond `sh`, `git`, `
 Breaking any of these breaks the value proposition, not just style.
 
 1. **`reference/` is the spec.** Change behavior, change the doc in the same commit, with a citation in
-   `reference/sources.md`. Otherwise the project starts lying about itself.
+   `reference/sources.md`. Otherwise the project starts lying about itself. Before editing a `reference/`
+   doc, re-read the source it cites — upstream docs move fast, and a confidently wrong reference doc is the
+   worst failure this project has.
 2. **Respect the determinism boundary.** Counting, parsing, path checks, rate limits, and threshold math go
    in scripts. Classification, drafting, and explanation go to the model. Never write a skill instruction
    that tells the model to count lines or check whether a file exists.
@@ -71,7 +73,8 @@ Breaking any of these breaks the value proposition, not just style.
 
 ## Testing
 
-`tests/run.sh` builds throwaway repos in `mktemp -d`; nothing touches real config. Tests assert the promises
+Run `sh tests/run.sh` before every commit — it's fast and has no dependencies. It builds throwaway repos in
+`mktemp -d`; nothing touches real config. Tests assert the promises
 in `reference/` that would otherwise silently regress — the token ceiling, the etiquette back-off, the
 threshold math, and `apply.py`'s target allowlist. Add an assertion for any behavior a user could rely on.
 

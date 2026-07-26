@@ -16,16 +16,21 @@ context rot, so it's capped hardest.
 
 Measured by `scripts/footprint.py`, asserted by `tests/run.sh`:
 
+All measured by `footprint.py` against bonsai's own dogfood install:
+
 | Item | Tokens | Notes |
 | :--- | ---: | :--- |
-| `/bonsai:promote` description | 82 | Measured. The **only** model-invocable skill — it has to be, since the CLAUDE.md pointer tells Claude to call it |
-| `/bonsai:init`, `:review`, `:prune`, `:pause` descriptions | **0** | Measured. `disable-model-invocation: true`, so invisible until you type them |
+| `/bonsai:promote` description | 82 | The **only** model-invocable skill — it has to be, since the CLAUDE.md pointer tells Claude to call it |
+| `CLAUDE.md` pointer stanza | 65 | 4 lines, the only prose bonsai adds |
 | `SessionStart` notice | ~15 | Only when proposals are pending; one line |
-| `CLAUDE.md` pointer stanza | ~29 | Projected — 5 lines, the only prose bonsai adds |
-| **Total in a real install** | **~126** | **Hard ceiling: 350** |
+| `/bonsai:init`, `:review`, `:prune`, `:pause` descriptions | **0** | `disable-model-invocation: true`, so invisible until you type them |
+| **Total** | **162** | **Hard ceiling: 350** |
 
-`footprint.py` reports 97 in this repository because bonsai's own `CLAUDE.md` has no pointer stanza
-installed. The 350 ceiling has deliberate headroom: it's the number a PR has to stay under, not a target.
+For scale: ~6% of a `CLAUDE.md` at the documented 200-line limit.
+
+The 350 ceiling has deliberate headroom — it's the number a PR must stay under, not a target. Note that this
+table previously *projected* 29 tokens for the pointer stanza; dogfooding measured 65 and the estimate was
+corrected. Prefer measurement to projection here, always.
 
 For scale: a CLAUDE.md at the documented 200-line limit is roughly 2,500 tokens. bonsai's entire
 permanent footprint is about a tenth of that — and the artifacts it creates are subject to

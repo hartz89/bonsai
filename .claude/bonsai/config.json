@@ -1,0 +1,14 @@
+{
+  "bonsai_version": "0.1.0",
+  "installed": "2026-07-26",
+  "install_mode": "dev",
+  "_comment": "bonsai installed on itself. Dev install: hooks point at ./scripts rather than a plugin root. See AGENTS.md § Dogfooding.",
+  "tier": "solo",
+  "mode": "guided",
+  "git": {
+    "strategy": "direct",
+    "default_branch": "main",
+    "commit_convention": "none"
+  },
+  "thresholds": { "modifier": -1, "floor": 1 }
+}

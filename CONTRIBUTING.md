@@ -32,7 +32,8 @@ a script. bonsai's cost is paid on every session of every repo that installs it.
 
 ### 3. Guard the resident-token budget
 
-`tests/run.sh` fails if bonsai's resident footprint exceeds 350 tokens. It's currently 97 in this repo, ~126 in a real install.
+`tests/run.sh` fails if bonsai's resident footprint exceeds 350 tokens. It's currently **162**, measured against
+bonsai's own dogfood install.
 
 Adding a **model-invocable** skill costs ~50 tokens in **every session of every install, forever**. That's
 a real bill. Only `/bonsai:promote` is model-invocable, because only it needs to be; everything else is

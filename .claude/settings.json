@@ -1,0 +1,35 @@
+{
+  "_comment": "bonsai dev install — dogfooding. A normal consumer gets these from the plugin's hooks/hooks.json with ${CLAUDE_PLUGIN_ROOT}. Here they point at the repo itself.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/pending.sh"], "timeout": 5 }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/pending.sh"], "timeout": 5 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/retro.sh"],
+            "timeout": 20, "async": true, "statusMessage": "bonsai: noting patterns" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          { "type": "command", "command": "sh", "args": ["${CLAUDE_PROJECT_DIR}/scripts/retro.sh"], "timeout": 20, "async": true }
+        ]
+      }
+    ]
+  }
+}

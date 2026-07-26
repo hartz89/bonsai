@@ -149,7 +149,7 @@ Real issues in what's already shipped. Not features.
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
 | ~~D-01~~ | ~~`last_exercised` is never written~~ | — | **Fixed.** See P-05. Skills and subagents still untracked → P-09 |
-| D-02 | No `/bonsai:pause` test coverage | S | The pause *mechanism* is tested via `pending.sh`; the skill isn't |
+| ~~D-02~~ | ~~No `/bonsai:pause` test coverage~~ | — | **Done.** `tests/run.sh` now asserts the skill's `disable-model-invocation: true`, and that it documents the same `.claude/bonsai/paused` marker `pending.sh` and `retro.sh` actually check |
 | D-03 | `retro.sh` field parsing is `sed`-based | S | Fine for well-formed hook JSON; would break on escaped quotes in a path |
 | D-04 | Rate-limit slot is claimed before work succeeds | S | A crashed pass burns the hour. Intentional (prevents thundering herd) but worth revisiting |
 | D-05 | `prune_scan.py` `redundant` detection is keyword-based | M | Will produce false positives; `prune` is report-only so the blast radius is low |

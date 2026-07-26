@@ -375,5 +375,22 @@ rm -rf "$d" "$BIN"
 # END R-07/D-07 block
 
 # ---------------------------------------------------------------------------
+# BEGIN D-02 block
+printf '\npause: skill/mechanism consistency (docs/backlog.md D-02)\n'
+SKILL="$ROOT/skills/pause/SKILL.md"
+has "pause skill stays non-model-invocable (invariant 3)" "$(cat "$SKILL")" "disable-model-invocation: true"
+has "pause skill documents the marker pending.sh checks" "$(cat "$SKILL")" '\.claude/bonsai/paused'
+has "pending.sh checks the path the skill documents" "$(cat "$ROOT/scripts/pending.sh")" '\$DIR/paused'
+has "retro.sh checks the path the skill documents" "$(cat "$ROOT/scripts/retro.sh")" '\$DIR/paused'
+
+d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
+t="$d/transcript.jsonl"; i=0; while [ $i -lt 20 ]; do echo '{"role":"assistant"}' >> "$t"; i=$((i+1)); done
+touch "$d/.claude/bonsai/paused"
+out=$(printf '{"transcript_path":"%s","session_id":"s1"}' "$t" | BONSAI_DEBUG=1 sh "$ROOT/scripts/retro.sh" 2>&1)
+has "retro.sh actually honours the marker the skill creates" "$out" "paused"
+rm -rf "$d"; unset CLAUDE_PROJECT_DIR
+# END D-02 block
+
+# ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

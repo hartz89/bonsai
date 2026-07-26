@@ -6,6 +6,9 @@ Itemized work. Reasoning and sequencing live in [roadmap.md](./roadmap.md); capa
 Size: **S** hours · **M** a day or two · **L** a week+ · **XL** needs its own design pass.
 Phase 0 items block everything else.
 
+Re-prioritized 2026-07-26 — see [roadmap.md](./roadmap.md#phase-2--eval-replay). Measurement (load tracking,
+eval replay) moved up; portability moved down, from headline claim to table stakes.
+
 ---
 
 ---
@@ -28,8 +31,14 @@ Phase 0 items block everything else.
 
 ## Phase 1 — Precision
 
+**P-09 leads this phase.** Auditing a rule by reading it yields an opinion; measuring whether it was ever
+loaded yields a fact. That distinction is the whole basis for pruning, and it's half-built.
+
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
+| P-09 | Extend load tracking to skills and subagents | M | **Lead item.** `InstructionsLoaded` covers CLAUDE.md and rules only. Needs `SubagentStart` (verify the `agent_type` payload field) and a transcript-based signal for skills |
+| P-10 | Add a verification signal to the promotion gate | M | Frequency is a weak bar on its own — three repetitions of a bad habit clears it. Add a quality dimension: did a verification pass (green build, passing test), is there a named failure the pattern avoids, was a dead end ruled out? Touches `thresholds.md`, `BASE_THRESHOLDS`, and `merge_observations.py` |
+| P-11 | Surface load-tracking evidence in the prune report | S | `prune_scan.py` computes `exercised_dates()` but the user-facing line doesn't say "loaded 0 times in 60 days." The evidence is the product; show it |
 | P-01 | Record accept/reject/edit outcomes per proposal in the inventory | M | Nothing can be tuned without this |
 | P-02 | Capture reject reasons as structured categories | S | "Wrong mechanism" vs "not a real pattern" imply opposite fixes |
 | P-03 | Feed outcomes back into confidence scoring | M | Patterns resembling past rejections should score lower |
@@ -38,7 +47,6 @@ Phase 0 items block everything else.
 | P-06 | Improve `bonsai-retrospective` prompt from observed failures | M | Depends on V-03 |
 | P-07 | Add a proposal-quality self-check before writing | S | Cheap precision win: reject weak drafts before the human sees them |
 | P-08 | Detect and merge near-duplicate observations | M | Model may emit different ids for one pattern; deterministic merge can't catch semantic dupes |
-| P-09 | Extend load tracking to skills and subagents | M | `InstructionsLoaded` covers CLAUDE.md and rules only. Needs `SubagentStart` (verify the `agent_type` payload field) and a transcript-based signal for skills |
 
 ---
 
@@ -58,12 +66,31 @@ Lands during Phase 0: a missing dependency would silently invalidate validation 
 
 ---
 
-## Phase 2 — Harness-agnosticism (vendor lock-in)
+## Phase 2 — Eval replay
 
-Moved ahead of eval replay: replay built on Claude-only assumptions would need rebuilding.
+Moved ahead of harness-agnosticism 2026-07-26. Replay is what turns pruning from a heuristic into evidence,
+and it pairs with P-09: load tracking proves an artifact was never consulted, replay proves it was consulted
+and changed nothing. Neither is convincing alone.
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
+| E-01 | On-demand single-case replay, human judges the diff | L | Cheapest useful version. Build this first and learn |
+| E-02 | Stabilize the eval case capture format | M | Prerequisite for automation; don't automate against a moving target |
+| E-03 | Automated judge pass over replay output | XL | LLM-as-judge on a noisy signal. Hard, easy to fool yourself |
+| E-04 | Replay-driven pruning: flag artifacts that change nothing | L | Turns pruning from heuristic into evidence. The real prize — pairs with P-09 |
+| E-05 | Cost controls for replay | S | Replay is expensive; needs opt-in and a hard cap |
+
+---
+
+## Phase 3 — Harness-agnosticism (vendor lock-in)
+
+Demoted from Phase 2 on 2026-07-26. Portability is table stakes, not a differentiator — cross-tool artifact
+formats are well-trodden ground. It stays an architectural commitment, because the canonical-body/wrapper seam
+constrains every design decision from now on, but it's no longer something to lead with.
+
+| ID | Item | Size | Notes |
+| :--- | :--- | :--- | :--- |
+| X-04 | Survey existing cross-tool artifact layouts before designing the seam | S | **Do this before W-01.** This is solved ground; a design pass that ignores existing conventions invents an incompatible one |
 | X-00 | Verified capability matrix: Claude Code, Cursor, Codex/`AGENTS.md`, Copilot | M | Per mechanism class, cited. Gates everything else. Cursor *has* glob scoping, so `adapters/agents-md.md` is currently wrong about it being Claude-only |
 | X-01a | Verify whether `.claude/rules/*.md` supports `@` imports | S | **Do this first.** Determines whether wrappers can reference or must inline |
 | W-01 | Define the canonical-body layout (`.harness/`) and wrapper contract | L | The core lock-in mechanism. One source of truth, thin per-harness wrappers |
@@ -73,18 +100,6 @@ Moved ahead of eval replay: replay built on Claude-only assumptions would need r
 | W-05 | Propose the parity check as an artifact in consumer repos | M | Pre-commit or CI. A generated guardrail protecting generated config |
 | X-02 | Test on a repo genuinely using two tools | M | Validates the seam end to end |
 | X-03 | Document degradation honestly in the README | S | Enforcement and down-leveling may be Claude-only. Say so rather than let a Cursor user discover it |
-
----
-
-## Phase 3 — Eval replay
-
-| ID | Item | Size | Notes |
-| :--- | :--- | :--- | :--- |
-| E-01 | On-demand single-case replay, human judges the diff | L | Cheapest useful version. Build this first and learn |
-| E-02 | Stabilize the eval case capture format | M | Prerequisite for automation; don't automate against a moving target |
-| E-03 | Automated judge pass over replay output | XL | LLM-as-judge on a noisy signal. Hard, easy to fool yourself |
-| E-04 | Replay-driven pruning: flag artifacts that change nothing | L | Turns pruning from heuristic into evidence. The real prize |
-| E-05 | Cost controls for replay | S | Replay is expensive; needs opt-in and a hard cap |
 
 ---
 
@@ -121,6 +136,8 @@ Moved ahead of eval replay: replay built on Claude-only assumptions would need r
 | ~~C-02~~ | ~~Add verification-date stamps to every `reference/` doc~~ | — | **Done.** Every `reference/` and `adapters/` doc carries a `Sources verified` stamp |
 | C-03 | Watch for native promote/prune shipping upstream | — | Ongoing. Triggers the fold-in-and-archive path |
 | C-04 | Re-verify the `/init` vs `/doctor` invocability question | S | Explicitly flagged uncertain in `sources.md` |
+| C-05 | Extend the freshness sweep to differentiator claims | M | C-01 re-verifies `sources.md`; nothing re-verifies "nobody else does X." Such a claim went stale in under a month and was caught only by being asked directly. Every differentiator needs a date and a re-check, same as every citation |
+| ~~C-06~~ | ~~Record the landscape review so it isn't re-done~~ | — | **Done.** `.local/prior-art.md` (gitignored — the conclusions belong in the docs, the project-by-project reasoning doesn't) |
 
 ---
 
@@ -138,12 +155,20 @@ Real issues in what's already shipped. Not features.
 | D-06 | No integration test for the full hook round trip | L | Unit-tested in pieces; the seams are unproven |
 | D-07 | `survey.sh` `gh` calls have no timeout | S | Same as R-07. A slow network could stall `/bonsai:init` |
 | D-08 | Nested `CLAUDE.md` placement is documented but unimplemented | M | Monorepo guidance exists in `placement.md`; no code path produces it |
+| D-09 | The "additive-only" claim is too broad to be true | S | **Live-facing.** `README.md:206` and `docs/capabilities.md:20` claim every comparable tool only ever adds. Cleanup-oriented tooling exists. Narrow it to the claim that holds: nothing else measures whether an artifact was ever *loaded* |
+| D-10 | Prior-art table is out of date | S | `README.md:198`. Predates several closer projects. Honest positioning means comparing against the strongest available, not the most flattering set |
+| D-11 | Roadmap calls harness-agnosticism a "headline selling point" | S | `roadmap.md:25`. Superseded by the Phase 3 demotion; the cross-cutting commitment stands, the marketing claim doesn't |
 
 ---
 
 ## Picking up work
 
 Phase 0 first, and V-02/V-03/V-04 before anything else — they're cheap and they de-risk the most.
+
+One exception that doesn't wait for Phase 0: **D-09/D-10/D-11**. An overclaim in a public README is a
+correctness bug, and it costs an hour to fix.
+
+After Phase 0, lead with **P-09**. The claim worth defending is measurement, not learning.
 
 Anything touching behavior described in `reference/` updates that doc in the same change, with a citation.
 See [CONTRIBUTING.md](../CONTRIBUTING.md).

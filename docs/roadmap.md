@@ -185,25 +185,12 @@ good enough and bonsai is noise — see [kill criteria](#what-would-make-us-stop
 
 A false positive is worse than a missed pattern. Tune toward fewer, better proposals rather than coverage.
 
-## Phase 2 — Harness-agnosticism, for real
+## Phase 2 — Eval replay
 
-Deliberately ahead of eval replay. Replay machinery built against Claude-only assumptions would have to be
-rebuilt, and the capability matrix changes what the artifact plan needs to express.
-
-**Sequence:**
-
-1. **Verified capability matrix** across Claude Code, Cursor, Codex/`AGENTS.md`, and Copilot — per mechanism
-   class, what each target actually supports, cited like everything else in `reference/`.
-2. **Refactor the artifact plan** to be explicitly harness-neutral, if Phase 0/1 revealed leakage.
-3. **Implement the `AGENTS.md` adapter as code**, not documentation.
-4. **Implement a Cursor adapter**, which is the real test — Cursor has its own scoped-rule format, so it
-   exercises the seam rather than just the lowest common denominator.
-5. **Test on a repo genuinely using two tools**, and state the degradation honestly in the README.
-
-Windows support belongs here too (R-05): a PowerShell path for the hook scripts is a portability problem of
-the same shape.
-
-## Phase 3 — Eval replay
+Promoted ahead of harness-agnosticism on 2026-07-26, reversing the earlier ordering. The reasoning that put
+portability first — that replay built on Claude-only assumptions would need rebuilding — is still true, but
+it's outweighed. Cross-tool artifact formats are well-trodden ground; evidence-based pruning isn't. Some rework
+is a cheaper price than deferring the thing only this project is trying to do.
 
 The honest differentiator, and currently the biggest gap between what bonsai claims and what it does. v1
 *captures* eval cases; it can't yet answer **"does this artifact actually change behavior?"**
@@ -221,6 +208,33 @@ it's proven useless. That's the one place bonsai's story is thinner than it soun
 
 **Known hard problems:** nondeterminism means one run proves little; replay costs real money; and "did it
 help" is often genuinely ambiguous. Build step 1, learn, and don't promise 2–3 until it teaches us something.
+
+Replay and load tracking (P-09) are two halves of one claim. Load tracking says an artifact was never
+*consulted*; replay says it was consulted and *changed nothing*. Together they're the evidence base for
+pruning. Neither is convincing alone.
+
+## Phase 3 — Harness-agnosticism, for real
+
+Demoted from Phase 2 on the same review. Cross-tool artifact layouts — `AGENTS.md`, per-harness adapters, broad
+tool detection — are established practice, so this is table stakes rather than something to lead with.
+
+What survives the demotion: portability remains a **cross-cutting commitment** (above), because every
+Claude-specific assumption baked in now is one to unpick later. What doesn't: treating it as a headline claim.
+And survey the existing conventions before designing the seam (X-04) — inventing an incompatible layout would
+defeat the purpose.
+
+**Sequence:**
+
+1. **Verified capability matrix** across Claude Code, Cursor, Codex/`AGENTS.md`, and Copilot — per mechanism
+   class, what each target actually supports, cited like everything else in `reference/`.
+2. **Refactor the artifact plan** to be explicitly harness-neutral, if Phase 0/1 revealed leakage.
+3. **Implement the `AGENTS.md` adapter as code**, not documentation.
+4. **Implement a Cursor adapter**, which is the real test — Cursor has its own scoped-rule format, so it
+   exercises the seam rather than just the lowest common denominator.
+5. **Test on a repo genuinely using two tools**, and state the degradation honestly in the README.
+
+Windows support belongs here too (R-05): a PowerShell path for the hook scripts is a portability problem of
+the same shape.
 
 ## Phase 4 — Multi-developer
 

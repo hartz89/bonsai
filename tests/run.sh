@@ -390,7 +390,7 @@ out=$(printf '{"transcript_path":"%s","session_id":"s1"}' "$t" | BONSAI_DEBUG=1 
 has "retro.sh actually honours the marker the skill creates" "$out" "paused"
 rm -rf "$d"; unset CLAUDE_PROJECT_DIR
 # END D-02 block
-# === BEGIN flow-state guards (V-08) =========================================================
+# === BEGIN flow-state guards, payload parsing, hot-path purity ==============================
 #
 # Every "does not suppress" case is asserted by forcing a *later* guard to fire: with
 # CLAUDE_PLUGIN_OPTION_DAILY_LIMIT=0, reaching "daily limit is 0" proves the flow-state guards let
@@ -494,7 +494,38 @@ out=$(printf '{"note":"see \\"transcript_path\\": \\"/nope\\"","transcript_path"
 has "a decoy key inside a string value is ignored" "$out" "daily limit is 0"
 rm -rf "$d"; unset CLAUDE_PROJECT_DIR
 
-# === END flow-state guards ==================================================================
+printf '\ninvariant: pure-sh hot path (AGENTS.md invariant 5)\n'
+# Structural on purpose. Proving "no python dependency" empirically would mean running these two
+# scripts on a python-free machine, which a suite that itself needs python3 cannot arrange. So
+# assert the shape instead: where python may appear (only inside retro.sh's detached work(), which
+# is reached after every guard has already decided) and where it may not (anywhere else in
+# retro.sh, anywhere at all in pending.sh). Comment lines are exempt so prose about python doesn't
+# false-fail; the point is invocations.
+for f in pending.sh retro.sh; do
+    is "$f keeps a /bin/sh shebang" "$(head -1 "$ROOT/scripts/$f")" "#!/bin/sh"
+    # '\[\[ ' rather than '\[\[' so POSIX bracket classes like [[:space:]] don't false-fail.
+    is "$f avoids bashisms" "$(grep -n -e '\[\[ ' -e '<<<' -e '^function ' -e 'declare ' "$ROOT/scripts/$f" || true)" ""
+done
+is "pending.sh never invokes python" \
+   "$(grep -vn '^[[:space:]]*#' "$ROOT/scripts/pending.sh" | grep -c 'python' || true)" "0"
+# Prints one line per stray python outside work(), then the count of legitimate ones inside it.
+# Asserting inside=1 as well means moving the merge_observations.py call out of work() fails here
+# rather than quietly passing the "no strays" half.
+purity=$(awk '
+    /^work\(\) \{$/       { inwork = 1 }
+    inwork && /^\}$/      { inwork = 0; next }
+    /^[[:space:]]*#/      { next }
+    /python/ && !inwork   { print "stray at line " FNR }
+    /python/ && inwork    { n++ }
+    END                   { print "inside=" n + 0 }
+' "$ROOT/scripts/retro.sh")
+is "retro.sh invokes python only inside the detached work()" "$purity" "inside=1"
+# ...and the guards genuinely precede the detach, so a python-less machine still gets the skip logic.
+wl=$(grep -n '^work() {' "$ROOT/scripts/retro.sh" | cut -d: -f1)
+gl=$(grep -n 'ended on a failure' "$ROOT/scripts/retro.sh" | tail -1 | cut -d: -f1)
+is "every flow-state guard runs before the detach" "$([ "$gl" -lt "$wl" ] && echo yes)" "yes"
+
+# === END flow-state guards, payload parsing, hot-path purity ================================
 
 # ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"

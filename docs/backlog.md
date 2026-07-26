@@ -63,7 +63,7 @@ Lands during Phase 0: a missing dependency would silently invalidate validation 
 | R-03 | Model-side fallbacks for the Python scripts | L | `apply.py`, `prune_scan.py`, `footprint.py` become in-skill work when Python is absent — slower, costs tokens, still functional |
 | R-04 | `merge_observations.py` fallback or graceful off | M | Hardest case: it's on the detached path and owns the counters. Likely "observation off, say why" rather than a shell reimplementation |
 | R-05 | Windows support: PowerShell hook variants | L | Hooks accept `shell: "powershell"`. Today bonsai is macOS/Linux-only and doesn't say so |
-| R-06 | Assert the pure-`sh` invariant in tests | S | Fail if `pending.sh`/`retro.sh` ever gain a Python dependency |
+| ~~R-06~~ | ~~Assert the pure-`sh` invariant in tests~~ | — | **Done.** Structural, and says so: shebang, bashisms, no python in `pending.sh`, and in `retro.sh` python only inside the detached `work()` — with the guards asserted to precede it |
 | ~~R-07~~ | ~~Add timeouts to `gh` calls in `survey.sh`~~ | — | **Done.** Portable watchdog (`with_timeout`, `GH_TIMEOUT=5`) in `survey.sh` — no reliance on `timeout(1)`, absent on stock macOS. Same as D-07 |
 
 ---

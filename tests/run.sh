@@ -189,6 +189,92 @@ is "detects the @AGENTS.md import" "$(i imports_agents_md)" "True"
 is "detects an existing pointer (idempotency)" "$(i has_bonsai_pointer)" "True"
 rm -rf "$d"
 
+# --- begin: pre-flight (R-01) ----------------------------------------------
+printf '\npre-flight: dependency detection and the degradation ladder (docs/roadmap.md)\n'
+
+pf_get() { printf '%s' "$1" | python3 -c "import json,sys;print(json.load(sys.stdin)$2)" 2>/dev/null; }
+
+# A PATH containing everything preflight.sh itself needs — but no python interpreter.
+pf_fakebin() {
+    b=$(mktemp -d)
+    for t in sh git gh uname date sed awk grep head cat mkdir mv rm dirname; do
+        p=$(command -v "$t" 2>/dev/null) || continue
+        case "$p" in /*) ln -s "$p" "$b/$t" 2>/dev/null ;; esac
+    done
+    printf '%s' "$b"
+}
+
+# Healthy environment: the suite already requires sh, git and python3 to run at all.
+d=$(mktemp -d)
+out=$(sh "$ROOT/scripts/preflight.sh" --project "$d")
+printf '%s' "$out" | python3 -c "import json,sys;json.load(sys.stdin)" 2>/dev/null \
+    && ok "emits well-formed JSON" || no "emits well-formed JSON" "$out"
+is "healthy environment is full tier" "$(pf_get "$out" "['tier']")" "full"
+is "full tier is installable" "$(pf_get "$out" "['installable']")" "True"
+is "first probe is not cached" "$(pf_get "$out" "['cached']")" "False"
+is "cache file written" "$(test -f "$d/.claude/bonsai/.state/preflight.json" && echo yes)" "yes"
+
+out=$(sh "$ROOT/scripts/preflight.sh" --project "$d")
+is "second call reports a cache hit" "$(pf_get "$out" "['cached']")" "True"
+
+# Reuse means reuse: doctor the cache and the next call must return the doctored value untouched.
+sed 's/"tier": "full"/"tier": "manual"/' "$d/.claude/bonsai/.state/preflight.json" > "$d/pf.tmp"
+mv "$d/pf.tmp" "$d/.claude/bonsai/.state/preflight.json"
+is "cached result is reused, not re-probed" \
+    "$(pf_get "$(sh "$ROOT/scripts/preflight.sh" --project "$d")" "['tier']")" "manual"
+is "--refresh re-probes" \
+    "$(pf_get "$(sh "$ROOT/scripts/preflight.sh" --project "$d" --refresh)" "['tier']")" "full"
+rm -rf "$d"
+
+# No python3: reduced tier, with a named fix and no attempt to install anything.
+b=$(pf_fakebin); d=$(mktemp -d)
+out=$(PATH="$b" sh "$ROOT/scripts/preflight.sh" --project "$d")
+is "no python3 degrades to reduced" "$(pf_get "$out" "['tier']")" "reduced"
+is "reduced tier still installs" "$(pf_get "$out" "['installable']")" "True"
+is "python is reported absent" "$(pf_get "$out" "['commands']['python']['present']")" "False"
+fix=$(printf '%s' "$out" | python3 -c "
+import json,sys
+print(next((m['fix'] for m in json.load(sys.stdin)['missing'] if m['command']=='python3'), ''))")
+[ -n "$fix" ] && ok "names a one-line fix for python3 ($fix)" || no "names a one-line fix for python3"
+rm -rf "$d"
+
+# No git either: manual tier.
+rm -f "$b/git"
+d=$(mktemp -d)
+out=$(PATH="$b" sh "$ROOT/scripts/preflight.sh" --project "$d")
+is "no git degrades to manual" "$(pf_get "$out" "['tier']")" "manual"
+rm -rf "$d"
+
+# gh is optional and must never change the tier on its own.
+b2=$(pf_fakebin); rm -f "$b2/gh"; d=$(mktemp -d)
+out=$(PATH="$b2:$(dirname "$(command -v python3)")" sh "$ROOT/scripts/preflight.sh" --project "$d")
+is "missing gh stays full tier" "$(pf_get "$out" "['tier']")" "full"
+optional=$(printf '%s' "$out" | python3 -c "
+import json,sys
+print(next((m['required'] for m in json.load(sys.stdin)['missing'] if m['command']=='gh'), 'absent'))")
+is "gh is reported as optional" "$optional" "False"
+rm -rf "$d" "$b2"
+
+# No sh at all: unsupported, and the skill must refuse to install.
+rm -f "$b/sh"
+d=$(mktemp -d)
+out=$(PATH="$b" /bin/sh "$ROOT/scripts/preflight.sh" --project "$d")
+is "no sh is unsupported" "$(pf_get "$out" "['tier']")" "unsupported"
+is "unsupported refuses install" "$(pf_get "$out" "['installable']")" "False"
+rm -rf "$d" "$b"
+
+# Cannot do its job: exit 0, empty stdout, complaint on stderr only.
+out=$(sh "$ROOT/scripts/preflight.sh" --project /nonexistent/bonsai/project 2>/dev/null)
+rc=$?
+is "unusable project exits 0" "$rc" "0"
+is "unusable project writes nothing to stdout" "$out" ""
+err=$(sh "$ROOT/scripts/preflight.sh" --project /nonexistent/bonsai/project 2>&1 >/dev/null)
+has "unusable project explains itself on stderr" "$err" "cannot cd"
+
+# The init skill must gate on pre-flight (R-01; wiring the ladder into every skill is R-02).
+has "init runs pre-flight first" "$(cat "$ROOT/skills/init/SKILL.md")" "preflight.sh"
+# --- end: pre-flight (R-01) --------------------------------------------------
+
 # ---------------------------------------------------------------------------
 printf '\n%s passed, %s failed\n\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

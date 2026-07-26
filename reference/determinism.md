@@ -17,6 +17,7 @@ recurring pattern would silently reset its own threshold.
 
 | Work | Where |
 | :--- | :--- |
+| Environment pre-flight: which of `sh`, `git`, `python3`/`python`, `gh` exist, and the resulting degradation tier | `scripts/preflight.sh` |
 | Surveying the repo: which instruction files exist, line counts, which rules have `paths:`, what's installed | `scripts/survey.sh` |
 | Workflow tier detection: contributor counts, merge ratios, branch protection, commit convention | `scripts/survey.sh` |
 | Observation bookkeeping: id matching, one-per-session de-duplication, expiry, reversals, confidence | `scripts/merge_observations.py` |
@@ -60,6 +61,13 @@ turns on stderr logging.
 
 Scripts stay POSIX `sh` where the logic is simple enough, and Python 3 where JSON or arithmetic makes
 shell error-prone. No runtime dependencies beyond `git`, `python3`, and optionally `gh`.
+
+Which of those are actually present is itself a scripted question, answered once at install by
+`scripts/preflight.sh` and cached in `.claude/bonsai/.state/preflight.json`. It is pure `sh` by
+necessity — a probe for a missing interpreter cannot need that interpreter — and it never re-probes on
+the hot path, because environment detection on every `SessionStart` would violate the cost contract.
+The tiers it reports (`full` / `reduced` / `manual` / `unsupported`) are defined in `docs/roadmap.md`.
+A missing dependency yields a named one-line fix; bonsai never runs it.
 
 ## Test the scripts, not the prompts
 

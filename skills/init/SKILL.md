@@ -18,6 +18,27 @@ Re-running is expected and must be idempotent: if `.claude/bonsai/config.json` e
 upgrade — reconcile, report only what changed, and never duplicate a stanza or re-propose something in
 `archive/`.
 
+## Phase 0 — Pre-flight (one call, install only)
+
+```
+sh ${CLAUDE_PLUGIN_ROOT}/scripts/preflight.sh --project .
+```
+
+Returns the detected `sh` / `git` / `python` / `gh`, a `tier` from the degradation ladder, and a `fix`
+line for anything missing. The result is cached under `.claude/bonsai/.state/`, so a re-run costs
+nothing; pass `--refresh` only if the user says they've just installed a dependency.
+
+| `tier` | Do |
+| :--- | :--- |
+| `full` | Continue silently. Do not mention pre-flight at all |
+| `reduced` | Continue. Say in one line which capability is degraded and give the `fix` verbatim |
+| `manual` | Continue. Say plainly that observation is off, so the loop won't learn on its own |
+| `unsupported` | **Stop. Write nothing.** Report the missing dependency and its `fix`, and say bonsai will install once it's available |
+
+Never a half-installed state: if `installable` is false, this skill ends here. bonsai does not install
+software on the user's machine — offer the `fix`, never run it. An absent `gh` is optional and worth at
+most a half-line, alongside the tier detection it weakens.
+
 ## Phase 1 — Survey (one call)
 
 ```

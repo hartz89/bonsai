@@ -56,7 +56,7 @@ Lands during Phase 0: a missing dependency would silently invalidate validation 
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
-| R-01 | `scripts/preflight.sh` — detect `sh`, `git`, `python3`/`python`, `gh`; cache the result | M | Pure `sh` by necessity. Runs at install, never per session |
+| ~~R-01~~ | `scripts/preflight.sh` — detect `sh`, `git`, `python3`/`python`, `gh`; cache the result | M | **Done.** Pure `sh`, cached at `.claude/bonsai/.state/preflight.json`, `--refresh` to re-probe. `/bonsai:init` gates on it and refuses to install at `unsupported`. Consuming the tier in the *other* skills is R-02 |
 | R-02 | Wire the degradation ladder into every skill | M | Full / reduced / manual / unsupported, per `roadmap.md` |
 | R-03 | Model-side fallbacks for the Python scripts | L | `apply.py`, `prune_scan.py`, `footprint.py` become in-skill work when Python is absent — slower, costs tokens, still functional |
 | R-04 | `merge_observations.py` fallback or graceful off | M | Hardest case: it's on the detached path and owns the counters. Likely "observation off, say why" rather than a shell reimplementation |

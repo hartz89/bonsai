@@ -64,6 +64,9 @@ Breaking any of these breaks the value proposition, not just style.
   measure it, don't publish it.
 - Keep this file instructional. Decisions and history belong in `docs/`; every line here costs resident
   context in every session forever.
+- Session handoff: `.local/next-session.md` (gitignored) holds a ready-to-run prompt plus where things
+  stand. Read it when picking up work; rewrite it as a session winds down. If `git log` contradicts it,
+  it's stale — trust the log.
 - **Closing a backlog item**: strike its ID in `docs/backlog.md` (`| ~~P-05~~ |`) with a `**Done.**` note, and
   add a `Backlog: P-05` trailer to the commit. `scripts/backlog_check.py` fails the test suite when a commit
   claims an item that's still open, or an item is struck with no commit behind it. Discovering a new gap means

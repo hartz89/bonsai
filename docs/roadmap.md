@@ -129,6 +129,11 @@ degrade gracefully; it starts confidently giving wrong advice, at scale, in othe
 - **Re-verify `sources.md` monthly.** Re-fetch each canonical doc, diff against what `reference/` asserts,
   open an issue per drift. Automatable, and a fitting use of `/loop` or a scheduled task.
 - **Stamp every reference doc** with its verification date; treat a stale stamp as a bug.
+- **Re-verify the comparative claims quarterly**, via `docs/claims.md` and
+  `scripts/claims_check.py --strict`. Landscape claims rot faster than citations: the 2026-07-26 sweep
+  retracted two of five, one of them four days after its falsifier shipped. A confidently wrong "nobody else
+  does X" is the same failure as a stale `reference/` doc, one level up — and it's the one a reader can
+  disprove in a single search, so it costs more credibility than it looks like it should.
 - **Watch specifically for**: new hook events or types, changes to `SessionStart`/`SessionEnd` output control,
   skill frontmatter additions, `disable-model-invocation` semantics, and whether `/init` becomes
   model-invocable. This risk multiplies with each harness supported.
@@ -297,8 +302,12 @@ Stated upfront, because a project that can't name its own failure conditions wil
 
 ## Deliberately not planned
 
-The YAGNI list. These come up naturally and should keep being declined:
+The YAGNI list. These come up naturally and should keep being declined. Where the reasoning needs more than
+a line, it lives in [`docs/design-notes.md`](./design-notes.md):
 
+- **A vector database for the learning loop.** Embeddings are a recall tool over unbounded history; residency
+  is a judgment call over a bounded, approved set. Never in the resident path — possibly, someday, in
+  candidate recall. See `design-notes.md`.
 - **A skills marketplace or library.** `obra/superpowers` does this well. bonsai generates from *your* project.
 - **A web dashboard.** The artifacts are files. `git log` and `/bonsai:prune` are the interface.
 - **An MCP server.** Would add tool definitions to every session for work scripts already do.

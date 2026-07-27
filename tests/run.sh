@@ -32,6 +32,27 @@ printf '\nbacklog: docs/backlog.md vs git history\n'
 out=$(python3 "$ROOT/scripts/backlog_check.py" --repo "$ROOT" 2>&1)
 if [ $? -eq 0 ]; then ok "backlog in sync with git history"; else no "backlog drift" "$out"; fi
 
+# Landscape claims rot faster than citations do (C-05). Structural drift fails; age only warns here, and
+# fails under --strict on the quarterly sweep, so the suite never goes red on a date with no code change.
+printf '\nclaims: docs/claims.md vs where they are asserted (reference/determinism.md)\n'
+out=$(python3 "$ROOT/scripts/claims_check.py" --repo "$ROOT" 2>&1)
+if [ $? -eq 0 ]; then ok "every claim resolves to its exact public wording"; else no "claims drift" "$out"; fi
+printf '%s' "$out" | grep -q 'warn overdue' && printf '       %s\n' "$(printf '%s' "$out" | grep 'warn overdue')"
+
+# A retracted claim that creeps back into the docs must fail, not just a reworded live one.
+d=$(mktemp -d); mkdir -p "$d/docs"
+printf 'We are the only tool that does the thing.\n' > "$d/README.md"
+printf '# C\n\n## CLAIM-01 - Retired\n\n- **Status:** retracted\n- **Claim:** x\n- **Asserted:** `README.md` — "only tool that does the thing"\n- **Verified:** 2026-07-26\n- **Re-check:** annual\n- **Falsified by:** y\n' > "$d/docs/claims.md"
+out=$(python3 "$ROOT/scripts/claims_check.py" --repo "$d" --today 2026-07-26 2>&1)
+has "retracted wording reappearing fails" "$out" "stale-assertion"
+# ...and an overdue claim warns without failing, unless --strict.
+printf '# C\n\n## CLAIM-01 - Live\n\n- **Claim:** x\n- **Asserted:** `README.md` — "only tool that does the thing"\n- **Verified:** 2026-01-01\n- **Re-check:** quarterly\n- **Falsified by:** y\n' > "$d/docs/claims.md"
+python3 "$ROOT/scripts/claims_check.py" --repo "$d" --today 2026-07-26 >/dev/null 2>&1
+is "overdue claim does not fail the suite" "$?" "0"
+python3 "$ROOT/scripts/claims_check.py" --repo "$d" --today 2026-07-26 --strict >/dev/null 2>&1
+is "overdue claim fails under --strict" "$?" "1"
+rm -rf "$d"
+
 printf '\nbudget: resident footprint (reference/budget.md)\n'
 fp=$(python3 "$ROOT/scripts/footprint.py" --plugin-root "$ROOT" --project "$ROOT")
 within=$(printf '%s' "$fp" | python3 -c "import json,sys;print(json.load(sys.stdin)['within_budget'])")

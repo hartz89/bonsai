@@ -10,6 +10,7 @@ sh tests/run.sh                                    # full suite, no deps
 sh scripts/survey.sh --project .                   # repo survey + tier/mode detection
 python3 scripts/footprint.py --plugin-root . --project . --format line
 python3 scripts/backlog_check.py --repo .          # backlog vs git history
+python3 scripts/claims_check.py --repo . --strict  # quarterly: are our comparative claims still true?
 ```
 
 No build step, no package manager, no runtime dependencies beyond `sh`, `git`, `python3`. `gh` is optional.
@@ -24,7 +25,7 @@ No build step, no package manager, no runtime dependencies beyond `sh`, `git`, `
 | `scripts/` | All deterministic work — see `reference/determinism.md` |
 | `adapters/` | Per-harness rendering rules |
 | `hooks/hooks.json` | `SessionEnd` observe, `SessionStart` surface, `InstructionsLoaded` track loads, `PreCompact` fallback |
-| `docs/` | Roadmap, backlog, capability ledger |
+| `docs/` | Roadmap, backlog, capability ledger, claims register, design notes |
 
 ## Invariants
 
@@ -73,6 +74,8 @@ Breaking any of these breaks the value proposition, not just style.
   adding a row with the next free ID rather than leaving it in prose.
 - Every new placement rule needs: the row in `reference/placement.md` (including the rejected alternative), a
   threshold in `reference/thresholds.md`, the class in `BASE_THRESHOLDS`, a worked example, and a citation.
+- **Comparative claims** ("nobody else does X") need a `docs/claims.md` entry with a date and a falsifier.
+  Prefer the narrowest true version; `claims_check.py` fails the suite when the wording drifts.
 
 ## Testing
 

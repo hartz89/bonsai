@@ -75,6 +75,22 @@ scoping to broadening, prefer delegating to `/init` or `/doctor` over reimplemen
 
 A PR that removes a capability and explains why is welcome.
 
+## Making a comparative claim
+
+Anything of the shape "nobody else does X", "the only tool that Y", or "unlike other tools" needs an entry in
+[`docs/claims.md`](./docs/claims.md) before it goes in the README, the capability ledger, or social copy.
+
+1. Write it in the **narrowest form the evidence supports**. A bold claim a reader disproves in one search
+   costs more than a modest one that holds.
+2. Give it an `Asserted:` entry quoting the exact public wording, a `Verified:` date, a `Re-check:` cadence,
+   and a **`Falsified by:`** line naming what would kill it. If you can't write that line, it isn't a claim.
+3. Run `python3 scripts/claims_check.py --repo .` — the suite fails if your quoted wording doesn't match the
+   file it's attributed to.
+4. When evidence narrows a claim later, soften the live entry and add a **retracted** entry with the old
+   wording. Retractions stay in the register; the check then fails if the retired wording reappears.
+
+`claims_check.py` cannot notice a claim nobody registered — that's why this is a rule and not just a script.
+
 ## Adding a placement rule
 
 The most valuable contribution. To add a signal → mechanism mapping:

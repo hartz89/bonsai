@@ -21,7 +21,7 @@ Verified 2026-07-25 against Claude Code v2.1.2xx docs. Hooks re-verified 2026-07
 | :--- | :--- |
 | [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) | Three-tier progressive disclosure; "start with evaluation"; split when unwieldy; references one level deep; TOC for files over 100 lines |
 | [Agent Skills specification](https://github.com/agentskills/agentskills) · [agentskills.io](https://agentskills.io) | Cross-vendor `SKILL.md` standard — the portable substrate |
-| [Skills](https://code.claude.com/docs/en/skills) | Frontmatter schema; `disable-model-invocation`; `context: fork` + `agent`; skill locations and precedence; description truncated at 1,536 chars |
+| [Skills](https://code.claude.com/docs/en/skills) | Frontmatter schema; `disable-model-invocation`; `context: fork` + `agent`; skill locations and precedence; description truncated at 1,536 chars. *Verified 2026-07-26:* the listing is budgeted (~1% of the context window, `skillListingBudgetFraction`) and **overflow is evicted by usage frequency** — "starting with the skills you invoke least". Upstream precedent for pruning resident config on a usage signal, not a semantic one |
 | [Subagents](https://code.claude.com/docs/en/sub-agents) | Frontmatter schema including `model`, `tools`, `maxTurns`, `effort`, `memory`, `skills`; what loads at startup |
 | [Hooks](https://code.claude.com/docs/en/hooks) | Event list; hook types (`command`, `http`, `mcp_tool`, `prompt`, `agent`); per-event output control |
 | [Hooks § SubagentStart](https://code.claude.com/docs/en/hooks#subagentstart) | *Verified 2026-07-26.* Fires when a subagent is spawned; input carries `agent_id` and `agent_type`; matcher filters on agent type. Output control: **No** — "Shows stderr to user only", and it "can't block subagent creation" |
@@ -41,9 +41,18 @@ Verified 2026-07-25 against Claude Code v2.1.2xx docs. Hooks re-verified 2026-07
 
 ## Prior art
 
-Read before contributing; bonsai deliberately overlaps some of these and deliberately diverges from
-all of them on garbage collection. See the README's positioning section.
+Read before contributing; bonsai deliberately overlaps a lot of this. **What we claim is different from it
+lives in [`docs/claims.md`](../docs/claims.md)**, each entry dated and falsifiable — do not assert novelty
+from this list alone. Swept 2026-07-26.
 
+- [netresearch/retro-skill](https://github.com/netresearch/retro-skill) — transcript friction analysis routed to six destinations with per-proposal approval; the closest comparable
+- [aneym/skill-stats](https://github.com/aneym/skill-stats) — `PostToolUse` skill-activation records in SQLite, dormancy reporting. Falsified CLAIM-06
+- [YawLabs/ctxlint](https://github.com/YawLabs/ctxlint) — static linter for agent context files; always-loaded-vs-conditional token accounting, `--strict` fails CI
+- [cuttlesoft/token-guard](https://cuttlesoft.com/blog/2026/02/10/token-guard-keeping-your-agent-context-lean-in-ci/) — GitHub Action failing builds on instruction-file token thresholds. Falsified CLAIM-07
+- [egorfedorov/claude-context-optimizer](https://github.com/egorfedorov/claude-context-optimizer) — cross-session file-read affinity patterns; `CLAUDE.md` bloat by size
+- [alirezarezvani/ClaudeForge](https://github.com/alirezarezvani/claudeforge) — `CLAUDE.md` maintenance; `InstructionsLoaded` used as a stateless line-cap validator
+- [Kulaxyz/self-learning-skills](https://github.com/Kulaxyz/self-learning-skills) — golden-path harvesting into skills/rules with `AGENTS.md` adapters
+- [anthropics/claude-md-management](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-md-management) — official `CLAUDE.md` quality scoring and session-learning capture
 - [obra/superpowers](https://github.com/obra/superpowers) — large curated skill library, incl. skill-authoring guidance
 - [affaan-m/ECC](https://github.com/affaan-m/ECC) — harness optimization: skills, instincts, memory, security
 - [ChristopherA's bootstrap seed](https://gist.github.com/ChristopherA/fd2985551e765a86f4fbb24080263a2f) — ~1400-token self-improving seed prompt; origin of "promote after 2 behavior changes"

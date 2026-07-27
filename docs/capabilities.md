@@ -17,7 +17,7 @@ Status: `done` · `partial` · `planned`
 | Enforced application | `apply.py` writes the artifact, files the eval case, records provenance — with a target-path allowlist | A poisoned proposal can't write outside harness paths. Enforced in code, not requested of a model | done |
 | Manual promotion | `/bonsai:promote` runs the same policy interactively | Power users can codify on demand instead of waiting for thresholds | done |
 | Review & apply | `/bonsai:review` renders diffs and applies on approval | The human stays the decision-maker | done |
-| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts, and reports the footprint ledger | The differentiator: other cleanup tools judge an artifact by reading it. Removal here argues from recorded loads | done |
+| Pruning | `/bonsai:prune` demotes stale, unused, and conflicting artifacts, and reports the footprint ledger | Most cleanup tools judge an artifact by reading it. Removal here argues from recorded loads — across rules, skills, *and* subagents, joined to what proposed them (`docs/claims.md` CLAIM-01, narrowed 2026-07-26) | done |
 | Load tracking | `InstructionsLoaded`, `SubagentStart`, and a `Skill`-matched `PostToolUse` hook log which rules, subagents, and skills are actually exercised; staleness is measured from real usage, and the prune report states the count | Makes pruning evidence-based rather than a guess. None of the three can return output or block, so they cannot interrupt. Skills are covered on the model-invoked path only | done |
 
 ## Placement intelligence
@@ -68,9 +68,12 @@ Worth stating publicly — it's the YAGNI story, and it's differentiating.
 ## Angles for social copy
 
 Claims that are true, specific, and non-obvious. Verify each against the ledger above before posting —
-anything marked `planned` or `partial` must be framed as roadmap, not shipped.
+anything marked `planned` or `partial` must be framed as roadmap, not shipped. Anything comparative must
+also clear `docs/claims.md`; the 2026-07-26 sweep retracted two claims that had been live in this list.
 
-1. "Your CLAUDE.md is a landfill. bonsai is the only one of these tools that takes things *out*."
+1. "Your CLAUDE.md is a landfill. bonsai asks a question nothing else can: did the rule I added six weeks
+   ago ever load?" *(Not "the only tool that takes things out" — that was false and is retracted. Cleanup
+   tooling exists; usage-based cleanup exists for skills. The narrow, true version is above.)*
 2. "It learns from your sessions at zero context cost — the observation pass runs in a different process."
 3. "It measures its own footprint against a token ceiling, and the test fails if it exceeds it. 162 tokens."
 4. "It won't interrupt you mid-sprint. It detects hot-path sessions in shell and skips before spending a token."

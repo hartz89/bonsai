@@ -193,24 +193,39 @@ Plus `/bonsai:pause` (and `--resume`) to stop observation for a repo in one step
 
 ## How this differs from prior art
 
-There's real work in this space and bonsai overlaps some of it. The honest differences, reviewed 2026-07 —
-this landscape moves fast enough that a table more than a quarter old is probably wrong:
+There's real work in this space and bonsai overlaps a lot of it. The honest differences, **swept 2026-07-26**
+— every claim below is registered in [`docs/claims.md`](./docs/claims.md) with a date, an expiry, and what
+would falsify it, because this landscape moves fast enough that a table more than a quarter old is probably
+wrong. Two claims that used to be in this section died in that sweep; they're recorded there as retracted
+rather than quietly deleted.
+
+**Learning from sessions:**
 
 | Project | What it does | What bonsai adds |
 | :--- | :--- | :--- |
-| [Kulaxyz/self-learning-skills](https://github.com/Kulaxyz/self-learning-skills) | The closest comparable. Harvests a verified "golden path" from a session into a skill or rule, with promotion gates, artifact triage, and Cursor / `AGENTS.md` adapters | A measured context budget and a removal path. Nothing there tracks an artifact after it's written |
-| [alirezarezvani/ClaudeForge](https://github.com/alirezarezvani/claudeforge) | Generates and maintains `CLAUDE.md`; a 150-line cap enforced deterministically, plus drift and stale-reference audits | Content sourced from observed sessions rather than conversational discovery, and routing beyond `CLAUDE.md` to the other six mechanisms |
-| [Context Cleanup](https://mcpmarket.com/tools/skills/context-cleanup) | Audits `CLAUDE.md`, memory, and skill definitions for redundancy and contradiction — "rule accumulation decay" by name | A lifecycle rather than a one-shot audit: the inventory that added an artifact is the one that decides to remove it |
-| [claude-reflect](https://github.com/jeremylongshore/claude-code-plugins-plus-skills) | Detects in-session corrections and queues them into `CLAUDE.md` | An explicit approval gate, a placement decision, and an expiry on unconfirmed evidence |
+| [netresearch/retro-skill](https://github.com/netresearch/retro-skill) | The closest comparable. Reads a session transcript for friction and routes each finding to one of six destinations with per-proposal approval; ships eval fixtures and tombstoned provenance | Evals as a *gate* rather than a suggestion, a measured resident budget, and routing to the harness's own token-saving mechanisms — `paths:` scoping, permissions, cheaper-model subagents |
+| [Kulaxyz/self-learning-skills](https://github.com/Kulaxyz/self-learning-skills) | Harvests a verified "golden path" from a session into a skill or rule, with promotion gates and `AGENTS.md` adapters | A removal path. Nothing there tracks an artifact after it's written |
+| [claude-reflect](https://github.com/jeremylongshore/claude-code-plugins-plus-skills) | Detects in-session corrections and queues them into `CLAUDE.md` | An approval gate, a placement decision, and an expiry on unconfirmed evidence. Its own docs note that once applied, "entries are permanent" |
+| [anthropics/claude-md-management](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-md-management) | Official plugin. Scores `CLAUDE.md` against quality criteria and captures session learnings via `/revise-claude-md` | Measurement and routing — it improves the file you have rather than deciding which of seven mechanisms a pattern belongs in |
 | [obra/superpowers](https://github.com/obra/superpowers) | Large curated skill library | Generates artifacts from *your* project rather than shipping a library |
-| [TerenceBristol/claude-improve](https://github.com/TerenceBristol/claude-improve) | Per-conversation retrospective | Detached and rate-limited, so it costs nothing in your session |
+
+**Measuring and pruning context:**
+
+| Project | What it does | What bonsai adds |
+| :--- | :--- | :--- |
+| [aneym/skill-stats](https://github.com/aneym/skill-stats) | Records every skill activation through a `PostToolUse` hook into a local database and reports dormant skills. **Falsified our load-tracking claim as originally worded** | Coverage of rules (`InstructionsLoaded`) and subagents (`SubagentStart`), not skills alone — and a promotion side, so usage can settle the record of what proposed the artifact |
+| [YawLabs/ctxlint](https://github.com/YawLabs/ctxlint) | Static linter for agent context files; 34 checks including always-loaded-vs-conditional token accounting, `--strict` fails CI | Runtime usage data. Its staleness check is static file analysis; bonsai's is a load record |
+| [cuttlesoft/token-guard](https://cuttlesoft.com/blog/2026/02/10/token-guard-keeping-your-agent-context-lean-in-ci/) | GitHub Action that fails the build when instruction files exceed a token threshold | Nothing on enforcement — this does it well. bonsai's distinction is holding *itself* to the contract, publishing its own measured resident cost |
+| [egorfedorov/claude-context-optimizer](https://github.com/egorfedorov/claude-context-optimizer) | Tracks per-session token spend and learns cross-session file-affinity patterns; flags `CLAUDE.md` bloat by size | Load evidence about *config artifacts* rather than file reads, and a build gate rather than advice |
+| [alirezarezvani/ClaudeForge](https://github.com/alirezarezvani/claudeforge) | Maintains `CLAUDE.md`; a 150-line cap enforced at load time, plus drift audits | Its `InstructionsLoaded` hook is a stateless line-cap validator — the load event triggers a size check and is then discarded. bonsai accumulates it |
 | `/doctor` (built in) | Trims `CLAUDE.md`, flags unused skills, MCP servers, and slow hooks | Nothing — `/bonsai:init` calls it rather than reimplementing it |
 
-**The one nobody else does: removal on measured evidence.** Cleanup tooling exists — several of the projects
-above audit config for staleness and redundancy. But they all judge an artifact by *reading* it, which yields
-an opinion. bonsai's `InstructionsLoaded` hook records which artifacts actually loaded, so `/bonsai:prune`
-argues from a fact: this rule has not been read in 60 days. Nothing else tracks that, and a harness that
-can't distinguish live config from dead config only grows. It's the reason this is called bonsai.
+**What's actually unoccupied, as of the last sweep:** load evidence across *all three* artifact classes,
+joined to the record of what proposed them. Others audit config by reading it, which yields an opinion.
+skill-stats records real skill activations — but only for skills. Nothing records rule loads or subagent
+spawns, and nothing joins usage back to provenance, so nothing else can ask the question bonsai exists to
+ask: **did the rule I added six weeks ago ever load?** A harness that can't distinguish live config from dead
+config only grows. It's the reason this is called bonsai.
 
 ## What would make this project stop
 

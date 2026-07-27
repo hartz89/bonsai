@@ -240,8 +240,17 @@ rationalize instead. From [`docs/roadmap.md`](docs/roadmap.md):
 - **If the retrospective needs a frontier model** rather than Haiku, the cost story collapses and bonsai
   should become manual-only.
 
+**That second condition has partially fired, as of 2026-07-26.** Use the parts Anthropic now does natively
+and don't let bonsai duplicate them: **`/context`** breaks the window down by system prompt, tools, MCP,
+subagents, memory, and skills; **`/doctor`** proposes trimming `CLAUDE.md` content it can derive from your
+codebase; `MEMORY.md` is measured and shortened automatically. What is still unaddressed first-party is
+durable staleness tracking across sessions, promotion from observed work, and eval-gated changes — which is
+the scope bonsai should be judged on. The full assessment, including what would fire the condition
+completely, is in [`docs/roadmap.md`](docs/roadmap.md) § What would make us stop, and dated in
+[`docs/claims.md`](./docs/claims.md) as CLAIM-09.
+
 Also worth knowing: **bonsai has not yet run for a sustained period on anyone else's project.** The scripts
-are covered by 53 assertions and the guidance is cited, but Phase 0 of the roadmap is validation for exactly
+are covered by a dependency-free test suite and the guidance is cited, but Phase 0 is validation for exactly
 this reason. Early adopters are early adopters.
 
 ## Design docs

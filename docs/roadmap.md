@@ -293,6 +293,30 @@ Stated upfront, because a project that can't name its own failure conditions wil
 - **Anthropic ships native promote/prune.** Likely — the Agent Skills post explicitly anticipates agents that
   "create, edit, and evaluate Skills on their own." Correct response: fold the reference corpus into whatever
   ships, archive the plugin, say so plainly in the README.
+
+  **Assessed 2026-07-26 (C-03): partially fired. Not yet the archive trigger.** What shipped natively in
+  roughly the preceding six months, all of it free and installed by default:
+
+  | Native capability | What it displaces |
+  | :--- | :--- |
+  | `/context` — window breakdown by system prompt, tools, MCP, subagents *with load source*, memory, skills | Most of the footprint ledger |
+  | `/doctor` — CLAUDE.md trim proposing removal of content Claude can derive from the codebase, human-confirmed (v2.1.206+) | A real share of `/bonsai:prune`, on the `CLAUDE.md` mechanism |
+  | `MEMORY.md` measured after writes, with shortening guidance (v2.1.210, narrowed v2.1.211) | The budget nudge, for auto-memory |
+  | Skill-listing overflow evicting descriptions "starting with the skills you invoke least" | Usage-based pruning — *for skill descriptions*, in-memory, not durable |
+
+  What has **not** shipped: durable cross-session load tracking for rules or subagents, promotion from
+  observed sessions, eval-gated promotion, provenance joined to usage, or routing across all seven
+  mechanisms. Across 273 official marketplace entries, `prune`, `stale`, and `hygiene` return zero matches;
+  the one official config-hygiene plugin (`claude-md-management`) has four commits in its history, no
+  substantive change since 2026-01-20, and targets `.claude.local.md` — a filename that does not exist.
+
+  **Two events fire this condition properly:** `/doctor` gaining durable cross-session usage data, or any
+  first-party plugin that proposes configuration from observed sessions. Either one, archive.
+
+  **What it changes now:** stop claiming the parts that shipped — measurement and `CLAUDE.md` trimming are
+  Anthropic's, and `/bonsai:init` should keep delegating rather than narrating. The honest remaining scope is
+  narrower than v1 was scoped for. Note the direction of travel too: the harness evicting resident config on
+  an invocation-frequency signal is bonsai's own thesis, implemented in-house.
 - **Retrospective quality requires a frontier model.** If Haiku can't do it and Sonnet+ is needed every
   session, the cost story collapses and bonsai should become manual-only.
 - **Nobody accepts a proposal they wouldn't have written themselves.** Then it's a reminder system, and should

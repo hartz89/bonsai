@@ -129,12 +129,16 @@ retracted entry with the old wording**, so the register records what we stopped 
 - **History:** added 2026-07-26 as the mechanical half of C-03, which had been "ongoing" with nothing behind
   it. **Monthly**, not quarterly — this is the claim whose falsification ends the project, so it earns the
   tightest cadence in the register.
-- **Watch:** the direction of travel is unfavourable. Four native capabilities landed in ~6 months, and
-  skill-listing overflow already evicts descriptions "starting with the skills you invoke least" — bonsai's
-  own thesis, in-house, if only in-memory and for skills. `claude-md-management` is additive and effectively
-  unmaintained (4 commits, nothing substantive since 2026-01-20), but `claude-code-setup`'s
-  `claude-automation-recommender` already recommends hooks, subagents, and skills from repo analysis, and
-  `skill-creator` ships an eval harness. The pieces are assembling first-party.
+- **Watch:** the direction of travel is unfavourable, and worse than first assessed. **Native plugin
+  dormancy tracking already exists** — a *Not used recently* group for plugins unused "at least two weeks,
+  over a span of at least 10 sessions", plus a *Last used* line (v2.1.187+). That is durable cross-session
+  usage tracking, first-party, on a two-signal threshold close to this project's own math; it survives only
+  because it covers plugins rather than rules or subagents. Alongside it: skill-listing overflow evicts
+  descriptions "starting with the skills you invoke least", and `/plugin` reports per-plugin context cost at
+  install. `claude-md-management` is additive and effectively unmaintained (4 commits, nothing substantive
+  since 2026-01-20), but `claude-code-setup`'s `claude-automation-recommender` already recommends hooks,
+  subagents, and skills from repo analysis, and `skill-creator` ships an eval harness. The pieces are
+  assembling first-party, and the honest reading is that this claim narrows again at every re-check.
 
 ---
 

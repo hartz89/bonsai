@@ -57,6 +57,7 @@ Defaults for the `team` tier. `distinct sessions` unless noted.
 
 | Class | Threshold | Rationale |
 | :--- | :--- | :--- |
+| Capability | **3** + never re-proposed within 90 days | Costs zero resident tokens, which is exactly why it needs the *strictest* recurrence rule in this file: it leaves no artifact behind, so nothing stops it recurring forever. See below |
 | Constraint, mechanically checkable | **1** | A near-miss on `.env` or a force-push is enough. Cheap to add, expensive to skip |
 | Explicit user directive | **1** | They asked. Don't make them ask again |
 | Fact | **2** | Same mistake twice is the documented CLAUDE.md trigger |
@@ -70,6 +71,21 @@ Defaults for the `team` tier. `distinct sessions` unless noted.
 Context-heavy tasks additionally require that observed runs read **more than ~15 files** or **more than
 ~20k tokens** of tool output while returning a short summary. Repetition alone doesn't justify a
 subagent; context burn does.
+
+Capability proposals carry three extra requirements, because this is the class most likely to decay into
+nagging — every other class ends in an artifact that either earns its keep or gets pruned, while a
+recommendation can be re-made indefinitely at no cost to bonsai and real cost to the user:
+
+1. **Name the observed symptom, not the feature.** "`/doctor` is useful" is an advertisement. "Your
+   `CLAUDE.md` gained 180 lines since June and six sessions re-read files it already describes" is
+   evidence. No symptom, no proposal.
+2. **Once per capability per 90 days, accepted or not.** Declining is information; asking again next week
+   discards it. This is stricter than the archive-and-resurface path every other class gets.
+3. **First-party only.** Anthropic-authored plugins and built-in commands. Recommending a third-party
+   plugin means vetting code that executes with the user's privileges — see `placement.md` anti-pattern 9.
+
+A capability proposal is also the only kind bonsai may not apply itself: it either hands over the
+invocation to run, or proposes an `enabledPlugins` entry for review. bonsai never installs anything.
 
 ## Tier modifiers
 

@@ -69,6 +69,12 @@ Archiving is not deletion, and a re-observed pattern can resurface — but at a 
 the user has now implicitly declined it once. bonsai never re-proposes the same artifact at the same
 confidence twice.
 
+**Capability proposals get a harder cap: once per capability per 90 days, accepted or declined.** Every
+other class ends in an artifact whose own existence stops it being proposed again. A recommendation to run
+`/doctor` leaves nothing behind, so without a clock it would recur forever — and a suggestion repeated
+after it was declined is the single fastest way to become the notification people mute. Enforced in
+`merge_observations.py` (`CAPABILITY_COOLDOWN_DAYS`), not requested of a model.
+
 ### 5. Suppress during rapid iteration
 
 Someone shipping fast does not want a librarian. The retrospective skips entirely when the session

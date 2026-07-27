@@ -1,6 +1,6 @@
 # Placement: which artifact, at which scope
 
-*Sources verified 2026-07-25. A stale stamp is a bug — see `docs/backlog.md` C-01.*
+*Sources verified 2026-07-26. A stale stamp is a bug — see `docs/backlog.md` C-01.*
 
 How bonsai decides what to build from an observed pattern. Read top to bottom; the gates are ordered
 so the cheapest rejection happens first.
@@ -24,8 +24,9 @@ artifacts as to create them.
 Reject if any holds:
 
 - **Native tooling owns it.** A first CLAUDE.md is `/init`'s job. Trimming a bloated CLAUDE.md,
-  finding unused skills/MCP servers/plugins, and flagging slow hooks are `/doctor`'s job. Propose the
-  hand-off, not a replacement.
+  finding unused skills/MCP servers/plugins, and flagging slow hooks are `/doctor`'s job. Reject the
+  artifact — then classify the observation as a **capability** (Gate 1) and propose the hand-off. That
+  path costs no resident context at all, so it is strictly better than a replacement, not a consolation.
 - **The model already does it.** If unmodified Claude gets this right, an instruction is pure cost.
   Guidance that merely restates a tool default earns nothing.
 - **It's derivable from the repo.** Directory layouts, dependency lists, and framework conventions are
@@ -43,6 +44,7 @@ Exactly one primary class. If two seem to fit, the earlier row wins.
 
 | Class | Looks like | Test |
 | :--- | :--- | :--- |
+| **Capability** | work done by hand that a shipped command already does; a symptom `/doctor` or a first-party plugin already reports | Does a first-party capability already cover this, and is there evidence it isn't being used? |
 | **Constraint** | "never touch X", "always run Y before Z" | Would a violation be a defect? Must it hold *every* time? |
 | **Fact** | build command, where handlers live, which package manager | One line, always true, needed in most sessions |
 | **Preference** | "fewer, longer tests", "avoid hasty abstractions" | Taste. A violation is arguable, not wrong |
@@ -55,6 +57,7 @@ Exactly one primary class. If two seem to fit, the earlier row wins.
 
 | Class | Mechanism | Why not the alternative |
 | :--- | :--- | :--- |
+| Capability | **No artifact.** A one-line recommendation naming the invocation — or, for team scope, an `enabledPlugins` entry in `.claude/settings.json` | Authoring a rule or skill that restates a shipped command pays resident tokens forever and rots the moment upstream changes it. The native `/plugin` panel already reports context cost, last-updated date, and the full component inventory, so bonsai must not duplicate any of that — its only job here is *why you, and why now* |
 | Constraint, mechanically checkable | **`PreToolUse` hook** (deny) or `permissions.deny` | Prose is a request, not a guarantee. *"Model judgments aren't reliable guardrails."* |
 | Constraint, needs judgment | **Rule**, labeled as advisory | Don't pretend it's enforced. If it must hold, find a checkable proxy |
 | Fact | **CLAUDE.md** | Skills load on demand; a fact needed every session belongs resident |
@@ -111,6 +114,9 @@ budget. Before proposing anything resident:
 - **Prefer the mechanism with the lowest resident cost that still works.** Hooks cost zero unless they
   return output. Subagents cost nothing in the main window. Skills cost a description. Rules cost their
   body when unscoped. CLAUDE.md costs its body, always.
+- **A `capability` proposal has a resident delta of exactly zero** — the only class that does, because
+  bonsai writes nothing. Whenever it genuinely covers the observation it wins Gate 4 outright. The
+  cheapest artifact is the one you don't create.
 
 Record the estimated resident-token delta on every proposal. A proposal that grows resident context
 without a stated reason is a bug.
@@ -128,6 +134,11 @@ Each of these is named in the sources. Any one of them blocks the proposal outri
 6. Two artifacts that contradict each other.
 7. Duplicating `AGENTS.md` content into `CLAUDE.md` instead of importing it with `@AGENTS.md`.
 8. Reference files nested more than one level below `SKILL.md`.
+9. Recommending a **third-party** plugin or marketplace. Plugins and marketplaces "can execute arbitrary
+   code on your machine with your user privileges", so `capability` proposals are first-party only.
+   bonsai does not audit other people's repositories, and a recommendation reads as vetting.
+10. Restating anything the native `/plugin` panel already shows — context cost, last-updated date, or the
+    component inventory. Duplicating it invites drift against a UI that ships weekly.
 
 ## Worked examples
 
@@ -143,3 +154,6 @@ Each of these is named in the sources. Any one of them blocks the proposal outri
 | Existing `AGENTS.md`, no `CLAUDE.md` | — | `CLAUDE.md` with `@AGENTS.md` | Committed |
 | No CLAUDE.md at all | — | Hand off to `/init` | — |
 | CLAUDE.md is 400 lines | — | Invoke `/doctor`, then propose `paths:` splits | Committed |
+| CLAUDE.md grew 60% in a month, `/doctor` never run in any observed session | Capability | Recommend `/doctor` — it proposes the trim itself | — |
+| Token cost asked about by hand 3×, no context tooling in use | Capability | Recommend `/context`; `session-report` for per-session detail | — |
+| Whole team hand-rolls the same triage, and a first-party plugin covers it | Capability | Propose an `enabledPlugins` entry so teammates are prompted on trust | Committed |

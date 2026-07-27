@@ -30,6 +30,7 @@ Status: `done` · `partial` · `planned`
 | Model down-leveling | Context-heavy read-mostly tasks become Haiku subagents with narrowed tools and bounded turns | Moves expensive work off your main model. Usually where bonsai pays for itself | done |
 | Personal vs team | Personal taste routes to `CLAUDE.local.md` / user rules, never committed files | Your preferences don't become your team's problem | done |
 | Budget gate | Every proposal carries a resident-token delta; CLAUDE.md over 200 lines triggers a refactor, not an append | Directly prevents the context bloat that degrades every session | done |
+| Capability routing | Routes an observation to a shipped first-party command or plugin instead of authoring anything — `/doctor`, `/context`, `session-report` — with evidence for why *this* project, *now* | The only proposal class with a **zero** resident-token delta. Anthropic ships the capability and states its cost; nothing else knows from your sessions that you'd benefit today. Capped at once per capability per 90 days | planned (P-13) |
 
 ## Good citizenship
 

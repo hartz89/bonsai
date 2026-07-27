@@ -32,6 +32,18 @@ Verified 2026-07-25 against Claude Code v2.1.2xx docs. Hooks re-verified 2026-07
 | [Plugins reference](https://code.claude.com/docs/en/plugins-reference) | Plugin layout; `plugin.json` schema; `userConfig`; `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_PLUGIN_DATA}`; `pluginConfigs` read only from user/managed settings |
 | [Commands](https://code.claude.com/docs/en/commands) | Which `/`-entries are built-in commands vs bundled skills — determines what bonsai can invoke |
 
+## Capability recommendations
+
+Establishes what bonsai must **not** rebuild, and how a `capability` proposal hands off. All verified
+2026-07-26.
+
+| Source | What it establishes |
+| :--- | :--- |
+| [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins) | `/plugin install <name>@<marketplace>`; install scopes (user / project / local / managed). The details pane already reports a **Context cost** estimate "so you can see how many tokens the plugin will add to your context window every turn" (v2.1.143+), a **Last updated** date (v2.1.144+), and a **Will install** component inventory (v2.1.145+) — bonsai must not duplicate any of these |
+| [Discover plugins § Configure team marketplaces](https://code.claude.com/docs/en/discover-plugins#configure-team-marketplaces) | `extraKnownMarketplaces` and `enabledPlugins` in a project's `.claude/settings.json`: "When team members trust the repository folder, Claude Code prompts them to install these marketplaces and plugins." The team-distribution path for a `capability` proposal — bonsai proposes the entry, the harness does the prompting |
+| [Discover plugins § Manage installed plugins](https://code.claude.com/docs/en/discover-plugins#manage-installed-plugins) | Native plugin dormancy: a **Not used recently** group for plugins "haven't used in at least two weeks, over a span of at least 10 sessions", with a **Last used** line (v2.1.187+). First-party usage tracking, for plugins — so `capability` proposals must target capability *absence*, never plugin dormancy, which is covered |
+| [Discover plugins § Security](https://code.claude.com/docs/en/discover-plugins#security) | "Plugins and marketplaces are highly trusted components that can execute arbitrary code on your machine with your user privileges." The reason `capability` recommendations are first-party only (`placement.md` anti-pattern 9) |
+
 ## Portability
 
 | Source | What it establishes |

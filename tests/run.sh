@@ -119,6 +119,22 @@ is "reversal resets counter" "$(python3 -c "
 import json
 print([json.loads(l)['distinct_sessions'] for l in open('$D/observations.jsonl') if json.loads(l)['id']=='pnpm'][0])")" "0"
 is "malformed input is survivable" "$(echo 'garbage' | M s7; echo $?)" "0"
+
+# A capability proposal writes no artifact, so only the 90-day clock stops it recurring forever.
+cap='{"observations":[{"id":"run-doctor","class":"capability","statement":"never runs /doctor","excerpt":"x"}]}'
+echo "$cap" | M c1 >/dev/null; echo "$cap" | M c2 >/dev/null
+is "capability crosses at 3 sessions" "$(echo "$cap" | M c3)" "run-doctor"
+is "capability stays quiet inside the 90-day cooldown" "$(echo "$cap" | M c4)" ""
+python3 - "$D/observations.jsonl" <<'PY'
+import json, sys
+from datetime import datetime, timedelta, timezone
+rows = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+for r in rows:  # backdate the emission past the cooldown
+    if r["id"] == "run-doctor":
+        r["crossing_emitted_at"] = (datetime.now(timezone.utc) - timedelta(days=91)).isoformat()
+open(sys.argv[1], "w").write("".join(json.dumps(r) + "\n" for r in rows))
+PY
+is "capability may resurface after 90 days" "$(echo "$cap" | M c5)" "run-doctor"
 rm -rf "$d"
 
 # ---------------------------------------------------------------------------

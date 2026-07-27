@@ -317,6 +317,19 @@ Stated upfront, because a project that can't name its own failure conditions wil
   Anthropic's, and `/bonsai:init` should keep delegating rather than narrating. The honest remaining scope is
   narrower than v1 was scoped for. Note the direction of travel too: the harness evicting resident config on
   an invocation-frequency signal is bonsai's own thesis, implemented in-house.
+
+  **The reframe (2026-07-26): treat native capability as supply, not competition.** Every capability
+  Anthropic ships has until now *shrunk* bonsai's scope, which makes the roadmap a losing race against a
+  weekly release cadence. The `capability` placement class inverts that: a shipped feature nobody uses
+  becomes something to route people to, so each release *grows* the surface bonsai works on. The gap it
+  addresses is real and adjacent to what's built — Anthropic ships the capability and states its cost, but
+  nothing knows from observed work that *this* project would benefit *now*. `pluginSuggestionMarketplaces`
+  is the closest native equivalent and keys off the working directory, not observed usage.
+
+  This is also the cheapest thing in the roadmap to validate. A `capability` proposal needs no eval-case
+  format, no promotion machinery, and no authored artifact — so the accept-rate stop condition above becomes
+  measurable in days rather than after Phase 2. If bonsai's central premise is wrong, this is where it shows
+  up first and least expensively.
 - **Retrospective quality requires a frontier model.** If Haiku can't do it and Sonnet+ is needed every
   session, the cost story collapses and bonsai should become manual-only.
 - **Nobody accepts a proposal they wouldn't have written themselves.** Then it's a reminder system, and should

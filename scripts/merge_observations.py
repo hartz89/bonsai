@@ -36,7 +36,11 @@ BASE_THRESHOLDS = {
     "procedure": 3,
     "repeated-prompt": 3,
     "context-heavy": 3,
+    "capability": 3,
 }
+# A capability proposal writes nothing, so nothing stops it recurring forever — the one class whose
+# cooldown is enforced here rather than by the artifact's own existence (thresholds.md).
+CAPABILITY_COOLDOWN_DAYS = 90
 TIER_MODIFIER = {"solo": -1, "team": 0, "enterprise": 1}
 
 SECRET_PATTERNS = [
@@ -245,10 +249,16 @@ def main() -> int:
             continue  # thresholds.md § Never promote — injection surface
 
         # Don't re-emit a crossing the drafting pass is already handling. Expires so that a pass which
-        # crashed before writing its proposal gets retried rather than lost forever.
+        # crashed before writing its proposal gets retried rather than lost forever — except for a
+        # capability, which leaves no artifact behind and so has nothing but this clock to stop it
+        # recurring forever. Declining one is information; asking again next week discards it.
         emitted = parse_iso(rec.get("crossing_emitted_at", ""))
-        if emitted and (now() - emitted) < timedelta(hours=EMISSION_COOLDOWN_HOURS):
-            continue
+        if emitted:
+            cooldown = (timedelta(days=CAPABILITY_COOLDOWN_DAYS)
+                        if rec.get("class") == "capability"
+                        else timedelta(hours=EMISSION_COOLDOWN_HOURS))
+            if (now() - emitted) < cooldown:
+                continue
 
         if rec["distinct_sessions"] >= need and rec["confidence"] >= CONFIDENCE_FLOOR:
             rec["crossing_emitted_at"] = stamp

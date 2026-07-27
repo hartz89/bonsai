@@ -140,6 +140,26 @@ retracted entry with the old wording**, so the register records what we stopped 
   subagents, and skills from repo analysis, and `skill-creator` ships an eval harness. The pieces are
   assembling first-party, and the honest reading is that this claim narrows again at every re-check.
 
+## CLAIM-10 — Converters move text, none reason about capability equivalence
+
+- **Status:** active
+- **Claim:** Cross-harness config tools (the rulesync cohort: `dyoshikawa/rulesync`, `ai-rules-sync`,
+  `agent_sync`, rule-porter) convert and sync file formats. None performs mechanism-level capability
+  reasoning when generalizing a repo across harnesses — no per-mechanism gap analysis, no explicit
+  enforced-here/advisory-there decisions, no behavioral eval of the result. They imply parity by omission.
+- **Asserted:** `docs/roadmap.md` — "what none of them do is reason about"
+- **Verified:** 2026-07-26
+- **Re-check:** quarterly
+- **Falsified by:** any migration/sync tool that emits a per-mechanism gap ledger (or equivalent degradation
+  report), or runs the same task battery under multiple harnesses to verify a converted config behaves.
+- **History:** added 2026-07-26 with the Phase 3 reframe (G-01). Deliberately scoped to *tools*: a model
+  prompted well can already do this reasoning ad hoc, which is exactly why G-01 packages the process rather
+  than the knowledge.
+- **Watch:** `dyoshikawa/rulesync` is the most active of the cohort (20+ targets, `import`/`convert`
+  commands, ships its own skills) and is one feature away — a "what didn't survive conversion" report would
+  falsify this. `AGENTS.md` convergence also erodes the *need* for conversion at the rules layer, which
+  narrows the ground this claim stands on without falsifying it.
+
 ---
 
 ## Retracted

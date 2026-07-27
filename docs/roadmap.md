@@ -220,24 +220,51 @@ Replay and load tracking (P-09) are two halves of one claim. Load tracking says 
 *consulted*; replay says it was consulted and *changed nothing*. Together they're the evidence base for
 pruning. Neither is convincing alone.
 
-## Phase 3 — Harness-agnosticism, for real
+## Phase 3 — Multi-harness generalization
 
 Demoted from Phase 2 on the same review. Cross-tool artifact layouts — `AGENTS.md`, per-harness adapters, broad
 tool detection — are established practice, so this is table stakes rather than something to lead with.
+
+**Reframed 2026-07-26: the product here is the generalization process, not a conversion layer.** Two
+findings forced it. First, 1:1 harness migration is a prompt, not a product — a model sitting inside the
+repo, with full context on what the config *means*, out-converts any text mover; and the text movers
+(rulesync and its cohort, 20+ targets, `import`/`convert` commands) already exist, while `AGENTS.md`
+convergence shrinks the syntactic problem every quarter. Second, what none of them do is reason about
+**capability equivalence**: which mechanisms have no portable form, what degrades to advisory prose, and
+whether the generalized config still behaves. That's the unoccupied ground, and it's G-01:
+
+- **The canonical split** — portable core in `AGENTS.md`, per-harness wrappers adding only what's
+  harness-specific (the W-01 seam, as a component rather than a deliverable).
+- **A gap ledger** — an explicit *enforced-here / advisory-there / absent-there* decision per non-portable
+  mechanism, recorded in the repo instead of silently meaning different things in different tools.
+- **An offered eval** — the same task battery under each harness. A generalization without an eval is a
+  claim, not a migration.
+
+Two design commitments, both learned the hard way this same week: capability mapping is **researched fresh
+per run** (model work), never maintained as a cross-harness index — the claims register retracted two of
+five entries at its *first* sweep, and that rot rate times N harnesses is a full-time job with no moat.
+And G-01 lives **in bonsai, not a second repository** — its seed is `adapters/` plus `survey.sh`'s
+multi-tool detection, detection routes through the `capability` proposal class ("this repo runs two
+harnesses with divergent config — run `/bonsai:generalize`"), and two zero-user products are worse than
+one. Extraction waits for demand independent of the observe-and-propose loop; starting in-repo makes that
+split cheap, starting split makes the merge-back expensive.
 
 What survives the demotion: portability remains a **cross-cutting commitment** (above), because every
 Claude-specific assumption baked in now is one to unpick later. What doesn't: treating it as a headline claim.
 And survey the existing conventions before designing the seam (X-04) — inventing an incompatible layout would
 defeat the purpose.
 
-**Sequence:**
+**Sequence** (gated on a real multi-harness repo; when the gate opens, G-01 outranks everything outside
+Phase 0):
 
 1. **Verified capability matrix** across Claude Code, Cursor, Codex/`AGENTS.md`, and Copilot — per mechanism
-   class, what each target actually supports, cited like everything else in `reference/`.
+   class, what each target actually supports, cited like everything else in `reference/`. Documents bonsai's
+   own rendering targets; it is not G-01's knowledge base.
 2. **Refactor the artifact plan** to be explicitly harness-neutral, if Phase 0/1 revealed leakage.
-3. **Implement the `AGENTS.md` adapter as code**, not documentation.
-4. **Implement a Cursor adapter**, which is the real test — Cursor has its own scoped-rule format, so it
-   exercises the seam rather than just the lowest common denominator.
+3. **Spec and build G-01** against the triggering repo — canonical split, gap ledger, degradation prose,
+   the eval offer. The first real run settles the design decisions speculation can't.
+4. **Implement the `AGENTS.md` and Cursor adapters as code** in its service — Cursor is the real test,
+   since its scoped-rule format exercises the seam rather than the lowest common denominator.
 5. **Test on a repo genuinely using two tools**, and state the degradation honestly in the README.
 
 Windows support belongs here too (R-05): a PowerShell path for the hook scripts is a portability problem of

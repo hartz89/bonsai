@@ -90,14 +90,14 @@ and changed nothing. Neither is convincing alone.
 
 ---
 
-## Phase 3 — Harness-agnosticism (vendor lock-in)
+## Phase 3 — Multi-harness generalization
 
-Demoted from Phase 2 on 2026-07-26. Portability is table stakes, not a differentiator — cross-tool artifact
-formats are well-trodden ground. It stays an architectural commitment, because the canonical-body/wrapper seam
-constrains every design decision from now on, but it's no longer something to lead with.
+Demoted from Phase 2 on 2026-07-26: portability is table stakes, not a differentiator. **Reframed the same
+week**: the deliverable is not a conversion layer — 1:1 migration is a prompt, not a product, and the
+rulesync cohort already moves text between formats. The deliverable is the *generalization process*: taking
+a repo from one harness to several, honestly. That's G-01, and everything else in this phase is a component
+of it.
 
-| ID | Item | Size | Notes |
-| :--- | :--- | :--- | :--- |
 **Groomed 2026-07-26.** This phase carried ten items — a whole wrapper-generation and parity-linting
 subsystem — for a goal the same grooming pass demoted to table stakes. Building it now would be the
 roadmap's own named failure: a guess dressed as progress, three layers deep, for a second harness no user
@@ -106,10 +106,11 @@ explicitly gated.
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
+| G-01 | `/bonsai:generalize` — the multi-harness generalization skill | XL | **The phase's centerpiece; when its gate opens, it outranks everything outside Phase 0.** Gated on a real multi-harness repo in front of us. Four outputs: (1) the canonical split — portable core in `AGENTS.md`, per-harness wrappers adding only what's harness-specific; (2) a **gap ledger** — per mechanism with no portable form (hooks, model routing, permissions), an explicit *enforced-here / advisory-there / absent-there* decision, recorded in the repo; (3) honest degradation prose, never implied parity; (4) an offered **eval** — the same task battery under each harness, because a generalization without an eval is a claim, not a migration. Capability mapping is researched fresh per-repo (model work), so nothing here maintains a rotting cross-harness index. Detection is a `capability`-class trigger: `survey.sh` already reports second-tool evidence, so bonsai *proposes* the run and the skill stays user-invoked. Absorbs the intent of W-01's seam and X-00's matrix as components. Deliberately in-repo, not a second project — extraction waits for demand independent of bonsai (see `roadmap.md` § Phase 3) |
 | X-01a | Verify whether `.claude/rules/*.md` supports `@` imports | S | **Do this first.** Determines whether wrappers can reference or must inline. Cheap, and the answer constrains the seam whether or not the seam gets built |
-| X-00 | Verified capability matrix: Claude Code, Cursor, Codex/`AGENTS.md`, Copilot | M | Per mechanism class, cited. Worth doing on its own merits — it's the honest-degradation table the README needs — independent of any generator. Absorbs X-04, which was a survey of the same ground |
+| X-00 | Verified capability matrix: Claude Code, Cursor, Codex/`AGENTS.md`, Copilot | M | Per mechanism class, cited. Worth doing on its own merits — it's the honest-degradation table the README needs — independent of any generator. Absorbs X-04, which was a survey of the same ground. Feeds G-01's gap ledger, but note G-01 researches capability equivalence *fresh per run*; this matrix documents bonsai's own rendering targets, it is not the skill's knowledge base |
 | X-03 | Document degradation honestly in the README | S | Enforcement and down-leveling may be Claude-only. Say so rather than let a Cursor user discover it. Follows X-00 and needs no code |
-| W-01 | Design the canonical-body/wrapper seam | XL | **Gated: do not start until a real user runs bonsai on a second harness.** Absorbs the former W-02/W-03/W-04 (per-harness generation and the parity linter) — splitting a design that doesn't exist yet into four implementation tickets was false precision. The architectural commitment in `roadmap.md` § 1 stands regardless; it constrains how artifacts are written today, which costs nothing and is the actual value |
+| W-01 | Design the canonical-body/wrapper seam | XL | **Gated: do not start until a real user runs bonsai on a second harness** — the same gate as G-01, of which this is now output (1). Absorbs the former W-02/W-03/W-04 (per-harness generation and the parity linter) — splitting a design that doesn't exist yet into four implementation tickets was false precision. The architectural commitment in `roadmap.md` § 1 stands regardless; it constrains how artifacts are written today, which costs nothing and is the actual value |
 | ~~W-02~~ | ~~Generate Claude Code wrappers from canonical bodies~~ | — | **Absorbed into W-01 on 2026-07-26.** Kept as a row rather than deleted, because git history references the ID |
 | ~~W-03~~ | ~~Generate Cursor wrappers (`globs:` frontmatter)~~ | — | **Absorbed into W-01.** Was billed as "the real test of the seam", which is an argument for it being part of the design, not a follow-on ticket |
 | ~~W-04~~ | ~~`scripts/lint_parity.py` — fail when a wrapper drifts~~ | — | **Absorbed into W-01.** Drift protection is a property the seam must have, not a separate deliverable |
@@ -194,7 +195,9 @@ test the central premise, and it needs no eval format or promotion machinery), *
 then **P-01** (Phase 1's lead — outcome recording).
 
 X-00 and the Phase 3 items are no longer good offline picks: the seam they serve is gated on a second
-harness nobody has asked for. C-04 is closed; the `/init` and `/doctor` invocability question is answered in
+harness nobody has asked for. The exception is the *trigger*: the moment a real multi-harness repo is in
+front of us (an enterprise project, say), **G-01 jumps the queue** — it's ranked as the highest-value gated
+item in the backlog, and its first real run makes the design decisions speculation can't. C-04 is closed; the `/init` and `/doctor` invocability question is answered in
 the docs, and what remains is live confirmation (V-04/V-05), not research.
 
 Anything touching behavior described in `reference/` updates that doc in the same change, with a citation.

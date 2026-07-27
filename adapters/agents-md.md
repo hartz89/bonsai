@@ -34,15 +34,16 @@ requires Administrator or Developer Mode on Windows — prefer the import.
 | Procedure | Skill | `SKILL.md` ✅ (name + description frontmatter is the portable subset) |
 | Reference | Skill + `reference/` files | `SKILL.md` + bundled files ✅ |
 | Global preference | `CLAUDE.md` line | `AGENTS.md` line ✅ |
-| **Path-scoped preference** | Rule with `paths:` | ⚠️ **No portable equivalent** |
+| **Path-scoped preference** | Rule with `paths:` | ⚠️ **No equivalent in `AGENTS.md`** — it is plain Markdown with no frontmatter. *Not* the same as Claude-only: Cursor has glob-scoped rules in its own `.cursor/rules/` format, so a Cursor-specific wrapper may well carry the scope. Unverified — see `docs/backlog.md` D-13 |
 | **Enforced constraint** | `PreToolUse` hook / `permissions.deny` | ⚠️ **No portable equivalent** |
 | **Down-leveled task** | Subagent with `model: haiku` | ⚠️ **No portable equivalent** |
 | Personal preference | `CLAUDE.local.md` | Tool-specific; keep out of `AGENTS.md` |
 
 ## Handling the three gaps
 
-These are the mechanisms that carry most of bonsai's value, and they have no portable form. Degrade
-honestly rather than silently:
+These are the mechanisms that carry most of bonsai's value, and they have no form in `AGENTS.md` itself.
+That is a statement about `AGENTS.md`, not about other tools — some have native equivalents in their own
+formats, which is the whole point of a per-harness wrapper. Degrade honestly rather than silently:
 
 **Path-scoped rules.** Write the Claude Code rule as the primary artifact. In `AGENTS.md`, add the guidance
 with its scope stated in prose:

@@ -75,9 +75,13 @@ from this list alone. Swept 2026-07-26.
 
 Recorded so they get re-verified rather than calcifying:
 
-- **`/init` invocability.** [Commands](https://code.claude.com/docs/en/commands) documents `/init` as a
-  built-in command (not model-invocable), but some builds expose an `init` *skill* in the model's skill
-  list. bonsai attempts invocation and falls back to instructing the user. Do not assert either way.
+- ~~**`/init` invocability.**~~ **Resolved 2026-07-26** (was: "do not assert either way").
+  [Skills](https://code.claude.com/docs/en/skills) states it directly: "A few built-in commands are also
+  available through the Skill tool, including `/init`, `/review`, and `/security-review`. Other built-in
+  commands such as `/compact` are not." `/doctor` is a bundled skill as of v2.1.205. So both hand-offs are
+  invocable. bonsai keeps the fallback path anyway — it costs one branch and covers older builds — but the
+  docs no longer disagree, and `reference/` should stop hedging as though they do. Empirical confirmation on
+  a live session is still V-04/V-05.
 - **`prompt` and `agent` hook types** are documented experimental. bonsai does not depend on them; the
   retrospective runs as a `command` hook shelling out to a headless process instead.
 - **Agent teams** are experimental and disabled by default. Out of scope for v1.

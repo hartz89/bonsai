@@ -97,8 +97,8 @@ tier and mode. Expect the hooks to fire while working here.
   `prune_scan.py` measures staleness from creation date and reports `load_tracking.active: false`. Skill
   coverage is partial by design — a hand-typed `/name` is invisible, since the only event that sees it can
   block the user's prompt (backlog P-12).
-- **`/doctor` is a bundled skill** (model-invocable); **`/init` is documented as a built-in command** (not
-  invocable) though some builds expose an `init` skill. Attempt, fall back, assert nothing.
+- **`/doctor` and `/init` are both invocable** — `/doctor` is a bundled skill, and `/init` is a built-in
+  exposed through the `Skill` tool. Keep the fallback path for older builds.
 - **`pluginConfigs` is read from user settings only** — project settings are deliberately ignored so a cloned
   repo can't inject values into hook commands. Team-shared policy goes in `.claude/bonsai/config.json`.
 - Everything currently assumes POSIX `sh`, so Windows is effectively unsupported (backlog R-05).

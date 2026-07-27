@@ -9,7 +9,11 @@ Phase 0 items block everything else.
 Re-prioritized 2026-07-26 — see [roadmap.md](./roadmap.md#phase-2--eval-replay). Measurement (load tracking,
 eval replay) moved up; portability moved down, from headline claim to table stakes.
 
----
+Groomed 2026-07-26, after a landscape sweep retracted two differentiator claims and found `/context`,
+`/doctor`'s trim, and native plugin dormancy tracking had shipped upstream. Net effect: **three items
+dropped, four gated, two closed by evidence already in hand, one promoted out of a deferred phase.** The
+test applied was the roadmap's own — anything that presumed a user, a harness, or a subsystem that doesn't
+exist yet is a guess dressed as progress, and carrying it as planned work implies a plan.
 
 ---
 
@@ -62,8 +66,8 @@ Lands during Phase 0: a missing dependency would silently invalidate validation 
 | :--- | :--- | :--- | :--- |
 | ~~R-01~~ | `scripts/preflight.sh` — detect `sh`, `git`, `python3`/`python`, `gh`; cache the result | M | **Done.** Pure `sh`, cached at `.claude/bonsai/.state/preflight.json`, `--refresh` to re-probe. `/bonsai:init` gates on it and refuses to install at `unsupported`. Consuming the tier in the *other* skills is R-02 |
 | R-02 | Wire the degradation ladder into every skill | M | Full / reduced / manual / unsupported, per `roadmap.md` |
-| R-03 | Model-side fallbacks for the Python scripts | L | `apply.py`, `prune_scan.py`, `footprint.py` become in-skill work when Python is absent — slower, costs tokens, still functional |
-| R-04 | `merge_observations.py` fallback or graceful off | M | Hardest case: it's on the detached path and owns the counters. Likely "observation off, say why" rather than a shell reimplementation |
+| R-03 | Model-side fallbacks for the Python scripts | L | `apply.py`, `prune_scan.py`, `footprint.py` become in-skill work when Python is absent — slower, costs tokens, still functional. **Gated 2026-07-26: not until a real user lacks `python3`.** `python3` ships with macOS and every mainstream Linux; R-02 already makes the degradation *legible*, which is the part that matters. Reimplementing three scripts against a hypothetical is exactly the fat this pass is trimming |
+| R-04 | `merge_observations.py` fallback or graceful off | S | Same gate as R-03, but resolve the *decision* now and cheaply: it owns the counters on the detached path, so the answer is "observation off, say why" — not a shell reimplementation. Downgraded M→S accordingly; it's a paragraph in `roadmap.md`, not a subsystem |
 | R-05 | Windows support: PowerShell hook variants | L | Hooks accept `shell: "powershell"`. Today bonsai is macOS/Linux-only and doesn't say so |
 | ~~R-06~~ | ~~Assert the pure-`sh` invariant in tests~~ | — | **Done.** Structural, and says so: shebang, bashisms, no python in `pending.sh`, and in `retro.sh` python only inside the detached `work()` — with the guards asserted to precede it |
 | ~~R-07~~ | ~~Add timeouts to `gh` calls in `survey.sh`~~ | — | **Done.** Portable watchdog (`with_timeout`, `GH_TIMEOUT=5`) in `survey.sh` — no reliance on `timeout(1)`, absent on stock macOS. Same as D-07 |
@@ -94,16 +98,24 @@ constrains every design decision from now on, but it's no longer something to le
 
 | ID | Item | Size | Notes |
 | :--- | :--- | :--- | :--- |
-| X-04 | Survey existing cross-tool artifact layouts before designing the seam | S | **Do this before W-01.** This is solved ground; a design pass that ignores existing conventions invents an incompatible one |
-| X-00 | Verified capability matrix: Claude Code, Cursor, Codex/`AGENTS.md`, Copilot | M | Per mechanism class, cited. Gates everything else. Cursor *has* glob scoping, so `adapters/agents-md.md` is currently wrong about it being Claude-only |
-| X-01a | Verify whether `.claude/rules/*.md` supports `@` imports | S | **Do this first.** Determines whether wrappers can reference or must inline |
-| W-01 | Define the canonical-body layout (`.harness/`) and wrapper contract | L | The core lock-in mechanism. One source of truth, thin per-harness wrappers |
-| W-02 | Generate Claude Code wrappers from canonical bodies | M | Depends on X-01a |
-| W-03 | Generate Cursor wrappers (`globs:` frontmatter) | M | The real test of the seam — Cursor has its own scoped-rule format |
-| W-04 | `scripts/lint_parity.py` — fail when a wrapper drifts from its canonical body | M | What makes inlining safe. Joins `tests/run.sh` |
-| W-05 | Propose the parity check as an artifact in consumer repos | M | Pre-commit or CI. A generated guardrail protecting generated config |
-| X-02 | Test on a repo genuinely using two tools | M | Validates the seam end to end |
-| X-03 | Document degradation honestly in the README | S | Enforcement and down-leveling may be Claude-only. Say so rather than let a Cursor user discover it |
+**Groomed 2026-07-26.** This phase carried ten items — a whole wrapper-generation and parity-linting
+subsystem — for a goal the same grooming pass demoted to table stakes. Building it now would be the
+roadmap's own named failure: a guess dressed as progress, three layers deep, for a second harness no user
+has asked for. The verification items are cheap and stay. The generator collapses to one design item,
+explicitly gated.
+
+| ID | Item | Size | Notes |
+| :--- | :--- | :--- | :--- |
+| X-01a | Verify whether `.claude/rules/*.md` supports `@` imports | S | **Do this first.** Determines whether wrappers can reference or must inline. Cheap, and the answer constrains the seam whether or not the seam gets built |
+| X-00 | Verified capability matrix: Claude Code, Cursor, Codex/`AGENTS.md`, Copilot | M | Per mechanism class, cited. Worth doing on its own merits — it's the honest-degradation table the README needs — independent of any generator. Absorbs X-04, which was a survey of the same ground |
+| X-03 | Document degradation honestly in the README | S | Enforcement and down-leveling may be Claude-only. Say so rather than let a Cursor user discover it. Follows X-00 and needs no code |
+| W-01 | Design the canonical-body/wrapper seam | XL | **Gated: do not start until a real user runs bonsai on a second harness.** Absorbs the former W-02/W-03/W-04 (per-harness generation and the parity linter) — splitting a design that doesn't exist yet into four implementation tickets was false precision. The architectural commitment in `roadmap.md` § 1 stands regardless; it constrains how artifacts are written today, which costs nothing and is the actual value |
+| ~~W-02~~ | ~~Generate Claude Code wrappers from canonical bodies~~ | — | **Absorbed into W-01 on 2026-07-26.** Kept as a row rather than deleted, because git history references the ID |
+| ~~W-03~~ | ~~Generate Cursor wrappers (`globs:` frontmatter)~~ | — | **Absorbed into W-01.** Was billed as "the real test of the seam", which is an argument for it being part of the design, not a follow-on ticket |
+| ~~W-04~~ | ~~`scripts/lint_parity.py` — fail when a wrapper drifts~~ | — | **Absorbed into W-01.** Drift protection is a property the seam must have, not a separate deliverable |
+| ~~W-05~~ | ~~Propose the parity check as an artifact in consumer repos~~ | — | **Dropped 2026-07-26.** A generated guardrail protecting generated config, for a generator that doesn't exist, in repos that don't use two harnesses. Speculation on speculation. If W-01 ever lands and drift is a real observed problem, re-file it then |
+| ~~X-04~~ | ~~Survey existing cross-tool artifact layouts before designing the seam~~ | — | **Done 2026-07-26**, by the C-05 sweep rather than deliberately: `wshobson/agents` renders one source to five harnesses via `make generate-all`, and `AGENTS.md` is a Linux Foundation standard read by most tools. That *is* the survey, and its conclusion is why this phase got demoted. Remaining specifics fold into X-00 |
+| X-02 | Test on a repo genuinely using two tools | M | Validates the seam end to end. Gated behind W-01, so equally not now |
 
 ---
 
@@ -115,7 +127,7 @@ constrains every design decision from now on, but it's no longer something to le
 | T-02 | Cross-developer dedup so N teammates don't file N copies | L | Follows directly from T-01 |
 | T-03 | Revisit whether team thresholds should *drop*, not rise | M | Corroboration across people beats repetition by one. Current tier logic may be backwards |
 | T-04 | Team-visible proposal mode | M | Proposals are gitignored, so there's nothing to review on a PR |
-| T-05 | Respect `CODEOWNERS` when routing proposals | M | Path owner should review guidance for their path |
+| ~~T-05~~ | ~~Respect `CODEOWNERS` when routing proposals~~ | — | **Dropped 2026-07-26.** Presumes team-visible proposals (T-04), a `CODEOWNERS` file, and a review culture that routes config changes by path — three assumptions stacked on a phase gated behind Phase 0. The idea is fine; carrying it as planned work implies a plan. Re-file if T-04 ships and routing turns out to be a real complaint |
 | T-06 | Test the enterprise worktree path for real | M | Written to spec, never executed |
 
 ---
@@ -139,7 +151,7 @@ constrains every design decision from now on, but it's no longer something to le
 | C-01 | Automate monthly re-verification of `sources.md` | M | Re-fetch canonical docs, diff against assertions, open an issue per drift |
 | ~~C-02~~ | ~~Add verification-date stamps to every `reference/` doc~~ | — | **Done.** Every `reference/` and `adapters/` doc carries a `Sources verified` stamp |
 | C-03 | Watch for native promote/prune shipping upstream | — | Ongoing. Triggers the fold-in-and-archive path. **Assessed 2026-07-26: partially fired** — `/context`, `/doctor`'s CLAUDE.md trim (v2.1.206+), `MEMORY.md` size policing (v2.1.210) and skill-listing eviction by invocation frequency all shipped natively, displacing measurement and a share of CLAUDE.md pruning. Durable load tracking for rules/subagents, session-observed promotion, and eval gating have not. Full assessment in `docs/roadmap.md` § What would make us stop; registered as CLAIM-09 so the checker dates it. Fires properly if `/doctor` gains cross-session usage data or a first-party plugin proposes config from observed sessions |
-| C-04 | Re-verify the `/init` vs `/doctor` invocability question | S | Explicitly flagged uncertain in `sources.md` |
+| ~~C-04~~ | ~~Re-verify the `/init` vs `/doctor` invocability question~~ | S | **Done 2026-07-26.** [Skills](https://code.claude.com/docs/en/skills) resolves it: "A few built-in commands are also available through the Skill tool, including `/init`, `/review`, and `/security-review`." `/doctor` became a bundled skill in v2.1.205. Both hand-offs are invocable; the fallback stays for older builds. `sources.md` no longer hedges and the `AGENTS.md` gotcha shrank to one line — a small resident-context win. Live confirmation remains V-04/V-05 |
 | ~~C-05~~ | ~~Extend the freshness sweep to differentiator claims~~ | M | **Done.** `docs/claims.md` registers every comparative claim with a date, a cadence, and a `Falsified by:` line; `scripts/claims_check.py` resolves each to its exact public wording (and asserts retracted wording stays gone), warning on age and failing under `--strict`. The first sweep retracted **two of five** claims: `aneym/skill-stats` records skill-activation events (killing the load-tracking claim as worded, 4 days after it shipped), and `cuttlesoft/token-guard` plus `YawLabs/ctxlint` already fail CI on context-token thresholds. ClaudeForge's `InstructionsLoaded` hook re-confirmed as a stateless line-cap validator |
 | ~~C-06~~ | ~~Record the landscape review so it isn't re-done~~ | — | **Done.** `.local/prior-art.md` (gitignored — the conclusions belong in the docs, the project-by-project reasoning doesn't) |
 | C-07 | Schedule the quarterly claims sweep | S | C-05 built the register and the checker, but `claims_check.py --strict` only *reports* age — nothing performs the research. Same automation gap as C-01, and the same fix: a scheduled task that re-reads each `Watch:` line, re-probes the named projects, and opens an issue per drift. The 2026-07-26 sweep only happened because someone asked in conversation |
@@ -164,6 +176,7 @@ Real issues in what's already shipped. Not features.
 | ~~D-09~~ | The "additive-only" claim is too broad to be true | S | **Done.** Narrowed in `README.md` and `docs/capabilities.md`: cleanup tooling exists, but it judges an artifact by reading it. What holds is that nothing else records whether an artifact was ever *loaded* |
 | ~~D-10~~ | Prior-art table is out of date | S | **Done.** Rebuilt against the strongest current set (self-learning-skills, ClaudeForge, Context Cleanup, claude-reflect) and dated, since it goes stale in about a quarter. Re-verify under C-05 |
 | ~~D-11~~ | Roadmap calls harness-agnosticism a "headline selling point" | S | **Done.** Cross-cutting commitment 1 now reads "table stakes, not a differentiator" and points at Phase 3 for the reasoning. The architectural discipline stands; the marketing claim is gone |
+| D-13 | `adapters/agents-md.md` conflated "no `AGENTS.md` equivalent" with "Claude-only" | S | Partly fixed 2026-07-26: the table now says path scoping has no equivalent *in `AGENTS.md`* (plain Markdown, no frontmatter) rather than implying no other tool has it. **Still unverified:** whether Cursor's `.cursor/rules/` `globs:` frontmatter is current, and what Copilot and Codex offer. Was buried in X-00, a now-gated Phase 3 item — a possibly-wrong doc claim shouldn't wait on a deferred phase (invariant 1) |
 | D-12 | `skills/init` `allowed-tools` doesn't permit the scripts it invokes | S | Frontmatter allows `Bash(git *)`/`Bash(gh *)` but not `Bash(sh *)` or `Bash(python3 *)`, yet the skill runs `survey.sh`, `preflight.sh`, and `footprint.py`. Verify what the harness actually enforces, then fix the frontmatter — and audit the other four skills for the same gap |
 
 ---
@@ -175,9 +188,14 @@ what Phase 0 requires: *live sessions*, not more code. The 2026-07-26 batch clea
 built offline (P-09/P-11, R-01, the V-08 guards, the small defects); what remains in Phase 0 is using
 bonsai for real and writing down what happens.
 
-Good offline picks while validation runs, in order: **X-01a** and **C-04** (cheap doc-verification with
-empirical checks), **X-00** (the capability matrix that gates every adapter), **D-12** (verify what
-`allowed-tools` actually enforces), then **P-01** (Phase 1's lead — outcome recording).
+Good offline picks while validation runs, in order: **P-13** (the `capability` class — the cheapest way to
+test the central premise, and it needs no eval format or promotion machinery), **D-12** (verify what
+`allowed-tools` actually enforces), **X-01a** and **D-13** (cheap doc-verification with empirical checks),
+then **P-01** (Phase 1's lead — outcome recording).
+
+X-00 and the Phase 3 items are no longer good offline picks: the seam they serve is gated on a second
+harness nobody has asked for. C-04 is closed; the `/init` and `/doctor` invocability question is answered in
+the docs, and what remains is live confirmation (V-04/V-05), not research.
 
 Anything touching behavior described in `reference/` updates that doc in the same change, with a citation.
 See [CONTRIBUTING.md](../CONTRIBUTING.md).

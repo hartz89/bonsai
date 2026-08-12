@@ -7,6 +7,12 @@ than merely requested of a model.
 
 Usage:
     apply.py --proposal .claude/bonsai/proposals/<id>.md [--project DIR] [--dry-run]
+             [--allow-shrink]
+
+The write boundary is about content as well as path (AGENTS.md invariant 8). A proposal's fenced block
+is the *entire resulting file*, never a fragment — but a model that gets that wrong would otherwise
+silently destroy the target, which is exactly how sharpshooter lost an 80-line CLAUDE.md (D-14). So
+every overwrite is backed up first, and an implausible shrink is refused rather than applied.
 """
 
 from __future__ import annotations
@@ -15,11 +21,18 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 from datetime import datetime, timezone
 
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 FENCE = re.compile(r"```[a-zA-Z0-9_-]*\s*\n(.*?)```", re.DOTALL)
+
+# D-14. A fragment pasted where a whole file belongs shows up as a drastic shrink, so that's what we
+# test for. Deliberately not a superset check: a legitimate edit that *rewrites* a line ("use npm" ->
+# "use pnpm") is not a superset of the original, and rejecting those would make the tool unusable.
+SHRINK_MIN_LINES = 10   # below this, a big proportional shrink is ordinary, not suspicious
+SHRINK_RATIO = 0.5      # refuse when the result keeps less than half the existing non-blank lines
 
 # A proposal is model-authored text. Its target is therefore untrusted input, and is constrained to
 # paths that are legitimately harness configuration. Anything else is a bug or an attack.
@@ -85,11 +98,39 @@ def merge_settings(existing_text: str, addition_text: str) -> str:
     return json.dumps(existing, indent=2) + "\n"
 
 
+def substantive_lines(text: str) -> int:
+    """Non-blank lines. The unit CLAUDE.md and rule files are actually reasoned about in."""
+    return sum(1 for line in text.splitlines() if line.strip())
+
+
+def shrink_verdict(existing: str, proposed: str) -> tuple[bool, int, int]:
+    """(refuse?, existing lines, proposed lines) — see SHRINK_* above."""
+    before, after = substantive_lines(existing), substantive_lines(proposed)
+    refuse = before >= SHRINK_MIN_LINES and after < before * SHRINK_RATIO
+    return refuse, before, after
+
+
+def back_up(dest: str, target: str, bonsai_dir: str) -> str:
+    """Copy the current file aside before it is overwritten. Returns a project-relative path.
+
+    Backups live under .state/ (already gitignored) rather than as a sibling `.bak`, which would show
+    up as an untracked file in the user's tree and eventually get committed by someone.
+    """
+    backups = os.path.join(bonsai_dir, ".state", "backups")
+    os.makedirs(backups, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    name = f"{stamp}-{target.replace('/', '_')}"
+    shutil.copy2(dest, os.path.join(backups, name))
+    return os.path.join(".claude", "bonsai", ".state", "backups", name)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--proposal", required=True)
     ap.add_argument("--project", default=os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="apply even when the result is drastically smaller than the current file")
     args = ap.parse_args()
 
     project = os.path.abspath(args.project)
@@ -140,17 +181,36 @@ def main() -> int:
     final = merge_settings(existing, content) if is_settings else content
     mode = "merged" if is_settings and existing else ("overwrote" if existing else "created")
 
+    # D-14. settings.json is exempt: merge_settings is additive, so a shrink there isn't data loss.
+    refuse, before_lines, after_lines = (False, 0, 0)
+    if existing and not is_settings:
+        refuse, before_lines, after_lines = shrink_verdict(existing, final)
+
+    bonsai_dir = os.path.join(project, ".claude", "bonsai")
+
+    # Dry-run reports the verdict rather than failing on it — surfacing the problem at review time is
+    # the whole reason /bonsai:review runs this first.
     if args.dry_run:
         print(json.dumps({"ok": True, "dry_run": True, "target": target, "action": mode,
-                          "bytes": len(final)}, indent=2))
+                          "bytes": len(final), "existing_lines": before_lines,
+                          "proposed_lines": after_lines,
+                          "shrink_refused": refuse and not args.allow_shrink}, indent=2))
         return 0
+
+    if refuse and not args.allow_shrink:
+        fail(
+            f"refusing to shrink '{target}' from {before_lines} to {after_lines} non-blank lines. "
+            "A proposal's fenced block must be the ENTIRE resulting file, not just the changed "
+            "part. If this really is intended, re-run with --allow-shrink."
+        )
+
+    backup = back_up(dest, target, bonsai_dir) if existing else None
 
     os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
     with open(dest, "w", encoding="utf-8") as fh:
         fh.write(final)
 
     stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    bonsai_dir = os.path.join(project, ".claude", "bonsai")
 
     # File the eval case alongside the artifact it justifies.
     evals_dir = os.path.join(bonsai_dir, "evals")
@@ -182,6 +242,7 @@ def main() -> int:
         "created": stamp,
         "last_exercised": None,
         "source_observations": parse_field(block, "source-observations") or meta["id"],
+        "backup": backup,
     }
     inventory["artifacts"] = [a for a in inventory["artifacts"] if a.get("id") != meta["id"]]
     inventory["artifacts"].append(record)
@@ -204,6 +265,7 @@ def main() -> int:
     print(json.dumps({
         "ok": True, "id": meta["id"], "target": target, "action": mode,
         "mechanism": meta["mechanism"], "eval_case": f".claude/bonsai/evals/{meta['id']}.md",
+        "backup": backup,
     }, indent=2))
     return 0
 

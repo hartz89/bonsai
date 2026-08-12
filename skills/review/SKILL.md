@@ -30,20 +30,32 @@ without passing through this skill.
    Present the artifact as a diff against the current file when one exists. Never summarize the content
    in place of showing it: the user is approving exact text.
 
+   The diff is a *display* choice. The proposal's fenced block is always the entire resulting file, and
+   `apply.py` writes it verbatim — so if a fence looks like a fragment of a file that already exists,
+   the proposal is malformed. Fix it before applying, don't apply and repair afterwards.
+
 3. **Get a decision.** Batch the questions — ask about all pending proposals at once, not one at a time.
    Accept / reject / edit. If the user edits, update the proposal file and re-apply from it, so the
    provenance and the eval case stay attached to what actually landed.
 
-4. **Apply.** For each accepted proposal:
+4. **Apply.** For each accepted proposal, dry-run first when the target already exists:
 
    ```
+   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/apply.py --proposal <path> --project . --dry-run
    python3 ${CLAUDE_PLUGIN_ROOT}/scripts/apply.py --proposal <path> --project .
    ```
 
    This is the only sanctioned way to apply. It enforces the target-path allowlist, requires an eval
-   case, merges `settings.json` rather than clobbering it, files the eval case, and records provenance.
-   Do not hand-write artifacts — you would bypass all of that. If it returns `ok: false`, report the
-   error and move on; do not work around it.
+   case, merges `settings.json` rather than clobbering it, backs up any file it overwrites, files the
+   eval case, and records provenance. Do not hand-write artifacts — you would bypass all of that. If it
+   returns `ok: false`, report the error and move on; do not work around it.
+
+   **On a shrink refusal**, the fence was a fragment rather than the whole file. Show the user the line
+   counts from the error, fix the proposal so the fence holds the complete resulting file, and apply
+   again. `--allow-shrink` exists for a genuine large deletion and needs the user to say so explicitly —
+   never reach for it to get past the error.
+
+   Report the `backup` path in the result whenever one is present, so undoing is a file copy away.
 
 5. **Reject.** Move declined proposals to `.claude/bonsai/archive/`. Note the reason in the file so a
    re-observed pattern doesn't come back with the same argument. Rejection is normal and cheap — treat it

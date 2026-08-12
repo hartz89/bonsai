@@ -173,6 +173,85 @@ is "eval case was filed" "$(test -f "$d/.claude/bonsai/evals/good.md" && echo ye
 rm -rf "$d"
 
 # ---------------------------------------------------------------------------
+# D-14: a fenced fragment must never silently replace an existing file. sharpshooter lost an 80-line
+# CLAUDE.md this way — two fragment proposals, each overwriting the whole file.
+printf '\napply: overwrite protection (D-14)\n'
+d=$(sandbox); mkdir -p "$d/p"
+# An 80-line CLAUDE.md, and a proposal carrying only the changed bullet.
+i=1; while [ $i -le 80 ]; do echo "- convention line $i" >> "$d/CLAUDE.md"; i=$((i+1)); done
+prop() { cat > "$d/p/$1.md" <<EOF
+---
+id: $1
+class: fact
+mechanism: claude-md
+target: $2
+scope: committed
+---
+## Proposed artifact
+\`\`\`
+$3
+\`\`\`
+## Eval case
+**Situation:** x. **Without:** y. **With:** z. Padding to clear the length floor.
+EOF
+}
+# shellcheck disable=SC2086  # $2 is an optional flag, deliberately word-split
+ap() { python3 "$ROOT/scripts/apply.py" --proposal "$d/p/$1.md" --project "$d" ${2:-} 2>&1; }
+
+prop frag "CLAUDE.md" "- use pnpm, not npm"
+out=$(ap frag)
+has "fragment overwrite is refused" "$out" "refusing to shrink"
+has "refusal names both line counts" "$out" "from 80 to 1"
+is "the file is untouched" "$(wc -l < "$d/CLAUDE.md" | tr -d ' ')" "80"
+is "no backup taken on a refusal" "$(ls "$d/.claude/bonsai/.state/backups" 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# The escape hatch works, and backs the old content up on the way through.
+has "--allow-shrink permits it" "$(ap frag --allow-shrink)" '"ok": true'
+is "shrink actually applied" "$(wc -l < "$d/CLAUDE.md" | tr -d ' ')" "1"
+b="$d/.claude/bonsai/.state/backups"
+is "overwrite left one backup" "$(ls "$b" | wc -l | tr -d ' ')" "1"
+is "backup holds the pre-write content" "$(wc -l < "$b/$(ls "$b")" | tr -d ' ')" "80"
+
+# False-positive guard. A legitimate rewrite is not a superset of the original — "use npm" becoming
+# "use pnpm" removes a line and adds one — so this must stay allowed or the guard is unusable.
+rm -rf "$d/CLAUDE.md" "$b"; i=1
+while [ $i -le 80 ]; do echo "- convention line $i" >> "$d/CLAUDE.md"; i=$((i+1)); done
+body=$(i=1; while [ $i -le 78 ]; do echo "- rewritten line $i"; i=$((i+1)); done)
+prop rewrite "CLAUDE.md" "$body"
+has "a same-size rewrite is allowed" "$(ap rewrite)" '"ok": true'
+is "rewrite landed in full" "$(wc -l < "$d/CLAUDE.md" | tr -d ' ')" "78"
+
+# Creating a new file has nothing to lose: no shrink check, no backup.
+prop fresh ".claude/rules/new.md" "just one line"
+has "new file is created" "$(ap fresh)" '"created"'
+is "no backup for a create" "$(ls "$b" 2>/dev/null | wc -l | tr -d ' ')" "1"
+
+# Under the 10-line floor a big proportional shrink is ordinary, not suspicious.
+mkdir -p "$d/.claude/rules"; printf 'a\nb\nc\n' > "$d/.claude/rules/tiny.md"
+prop tiny ".claude/rules/tiny.md" "a"
+has "small files skip the shrink check" "$(ap tiny)" '"ok": true'
+
+# settings.json is exempt — merge_settings is additive, so a shrink there isn't data loss.
+printf '{"hooks":{"SessionEnd":[{"x":1}]},"other":true}\n' > "$d/.claude/settings.json"
+prop cfg ".claude/settings.json" '{"hooks":{"SessionEnd":[{"y":2}]}}'
+has "settings.json still merges" "$(ap cfg)" '"merged"'
+has "existing hook survived the merge" "$(cat "$d/.claude/settings.json")" '"x": 1'
+has "existing key survived the merge" "$(cat "$d/.claude/settings.json")" '"other": true'
+
+# --dry-run reports the verdict and touches nothing. Re-create the proposal: a successful apply
+# retires it to archive/applied.
+rm -rf "$d/CLAUDE.md"; i=1
+while [ $i -le 80 ]; do echo "- convention line $i" >> "$d/CLAUDE.md"; i=$((i+1)); done
+prop frag "CLAUDE.md" "- use pnpm, not npm"
+before=$(ls "$b" | wc -l | tr -d ' ')
+out=$(ap frag --dry-run)
+has "dry-run reports the shrink verdict" "$out" '"shrink_refused": true'
+has "dry-run reports existing line count" "$out" '"existing_lines": 80'
+is "dry-run wrote nothing" "$(wc -l < "$d/CLAUDE.md" | tr -d ' ')" "80"
+is "dry-run took no backup" "$(ls "$b" | wc -l | tr -d ' ')" "$before"
+rm -rf "$d"
+
+# ---------------------------------------------------------------------------
 printf '\nstaleness: load tracking (scripts/touch_artifact.sh)\n'
 d=$(sandbox); export CLAUDE_PROJECT_DIR="$d"
 mkdir -p "$d/.claude/rules"; printf 'x\n' > "$d/.claude/rules/old.md"; printf 'y\n' > "$d/.claude/rules/fresh.md"

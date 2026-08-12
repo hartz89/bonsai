@@ -41,6 +41,12 @@ Verbatim excerpts, one per line, each with its session id and date. No paraphras
 
 ## Proposed artifact
 
+> **This is the ENTIRE resulting file, not the part that changed.** `apply.py` writes this block
+> verbatim over the target — it does not merge (the one exception is `settings.json`). If the target
+> already exists, copy its full current content in and edit it here, so the fence contains every line
+> you want the file to end up with. Getting this wrong destroyed a `CLAUDE.md` once already (D-14);
+> `apply.py` now refuses a drastic shrink and backs up every overwrite, but don't rely on that.
+
 The complete file content, fenced, exactly as it will be written. Include frontmatter if the target
 takes frontmatter (`paths:` for a scoped rule, the full schema for a subagent).
 

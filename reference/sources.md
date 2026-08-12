@@ -75,6 +75,14 @@ from this list alone. Swept 2026-07-26.
 
 Recorded so they get re-verified rather than calcifying:
 
+- **`apply.py`'s shrink thresholds have no upstream source.** *Added 2026-08-11 (D-14).* "Refuse when an
+  existing file of ≥10 non-blank lines would keep less than half of them" is calibration derived from one
+  field incident — `sharpshooter` lost an 80-line `CLAUDE.md` to a 2-line fragment — not from any
+  published guidance. The ratio is a guess chosen to catch that shape of failure while leaving a genuine
+  rewrite alone. **Falsifier:** a real proposal that legitimately trims a file by more than half gets
+  refused, or a fragment small enough to slip under the ratio destroys a file anyway. Either means
+  re-tune the numbers, and the unconditional backup under `.state/backups/` is what makes both survivable.
+
 - ~~**`/init` invocability.**~~ **Resolved 2026-07-26** (was: "do not assert either way").
   [Skills](https://code.claude.com/docs/en/skills) states it directly: "A few built-in commands are also
   available through the Skill tool, including `/init`, `/review`, and `/security-review`. Other built-in

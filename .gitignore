@@ -12,6 +12,10 @@ CLAUDE.local.md
 # Local scratch space — drafts, notes, marketing copy, anything not part of the project
 .local/
 
+# Feedback from repos running bonsai in production. Quotes real sessions in other people's
+# projects, so it stays machine-local like observations do — findings graduate to docs/backlog.md.
+DOGFOOD-FEEDBACK.md
+
 # Worktrees bonsai creates for isolated harness commits
 .bonsai-worktrees/
 

@@ -379,3 +379,5 @@ a line, it lives in [`docs/design-notes.md`](./design-notes.md):
 - **Installing dependencies on the user's machine.** Detect, name the fix, degrade. Never install.
 - **Supporting every agent tool.** Claude Code, Cursor, and `AGENTS.md` done well beats six done badly.
 - **Auto-applying anything resident.** Not a feature, ever. The approval gate is the security model.
+- **A `SubagentStop` hook.** The obvious answer to "long sessions rarely end," and the wrong one: it can
+  block the subagent and shows stderr to the user mid-session. See `design-notes.md`.

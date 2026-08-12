@@ -139,3 +139,53 @@ reach. If similarity search ever earns a place here, it earns it in the proposal
 One caution against over-reading the gap: no OSS tool appears to do embedding-based config or rule dedup
 today, but absence of a tool is weak evidence of a bad idea. The accurate statement is "we know of none,"
 not "it doesn't work."
+
+---
+
+## Why not a `SubagentStop` hook
+
+*Verified 2026-08-11.*
+
+Raised by the sharpshooter dogfood, and it will be raised again, because the reasoning behind it is sound.
+That repo leans hard on subagents and dynamic workflows, and the main session runs for hours. `SessionEnd`
+fires rarely. Subagents finish constantly. So: observe on `SubagentStop` instead, and the learning loop gets
+a heartbeat that matches how the repo is actually used.
+
+The answer is no, and the reason is not "we don't need the signal."
+
+### It fails the one test rule 1 sets
+
+`etiquette.md` rule 1 allows exactly one class of mid-session hook — silent usage logging — and states the
+bar for adding another: **prove the event has no path to the user's attention.** `SubagentStop` fails twice
+over. Exit code 2 "prevents the subagent from stopping," and it accepts `decision`/`reason`. Its stderr is
+shown to the user. It is `Stop` with a narrower trigger.
+
+The bar is written about *capability*, not intent, and deliberately. bonsai would never set `decision:
+block` — but invariant 4 ("bonsai can never interrupt") is currently a structural fact: no hook it owns is
+wired to an event that could interrupt, so the guarantee holds even if a future script has a bug. Take a
+blocking-capable event and the invariant downgrades to a promise about good behavior, enforced by review.
+That is the same trade `UserPromptExpansion` was declined over, and it cost more there — that one was the
+only signal that sees a hand-typed `/skill` (P-12), and it was still declined. Paying that price and then
+taking this one would make the earlier decision incoherent.
+
+### The signal is already collected
+
+Two distinct worries hide in the proposal, and neither needs the event.
+
+**"Does bonsai see subagent work?"** It does. Sidechain records live in the same transcript JSONL the
+retrospective agent reads. The `isSidechain` filter in `retro.sh` scopes to the flow-state timing math only,
+where interleaved subagent timestamps would fabricate prompt gaps no human sat through. Separately,
+`SubagentStart` already logs which agents ran — the usage signal pruning consumes.
+
+**"Does the loop ever fire in a six-hour session?"** That is a trigger-cadence problem, not a subagent
+problem, and `PreCompact` is the mechanism that answers it. `SubagentStop` would answer it badly: it fires
+dozens of times per session, and all but the first would be discarded by the one-run-per-hour rate limit —
+maximum noise, one run's worth of value.
+
+### Would revisit if
+
+- A `SubagentEnd`-shaped event appears with no output control and no blocking path, the way `SubagentStart`
+  has. Then it is ordinary usage logging and rule 1's exception already covers it.
+- `PreCompact` proves insufficient in practice *after* D-15 lands (its `manual` matcher, citation, and
+  test). If long sessions still produce no observations with both compaction paths wired, the trigger needs
+  rethinking — and the answer would be a different cadence for `retro.sh`, not a blocking-capable hook.

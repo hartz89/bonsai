@@ -10,6 +10,25 @@ Versions follow [semver](https://semver.org). Every release bumps `plugin.json` 
 
 Changes on `main` that installed users do **not** yet have.
 
+Nothing yet.
+
+## [0.2.0] — 2026-08-12
+
+First release driven by an external dogfooder. The headline is a data-loss fix, and everyone running
+0.1.0 should take it.
+
+### Fixed
+- **`apply.py` could destroy the file it was asked to edit.** A `claude-md` proposal whose fence carried
+  only the changed lines was written out as the *entire* file. Found in `sharpshooter`, where it replaced
+  an 80-line `CLAUDE.md` twice over. Three independent guards now: every overwrite is copied to
+  `.state/backups/` first, a target of ≥10 non-blank lines that would keep under half is refused without
+  `--allow-shrink`, and the "entire resulting file" contract is restated in `templates/proposal.md` and
+  `review/SKILL.md` where it's actually read (D-14)
+- Confidence floor made any pattern that exactly met its threshold unpromotable
+- Stale day-counter cleanup deleted the counter it had just written
+- A crossed observation re-emitted indefinitely when the drafting pass failed
+- False-positive conflict findings between disjoint monorepo rule scopes
+
 ### Added
 - `InstructionsLoaded` hook (`scripts/touch_artifact.sh`) recording which instruction artifacts actually load,
   so `/bonsai:prune` measures staleness from real usage rather than age
@@ -18,12 +37,8 @@ Changes on `main` that installed users do **not** yet have.
 - `AGENTS.md` as the canonical instruction set, with `CLAUDE.md` as a thin wrapper
 - `/bonsai:pause` (and `--resume`)
 - Kill criteria in the README
-
-### Fixed
-- Confidence floor made any pattern that exactly met its threshold unpromotable
-- Stale day-counter cleanup deleted the counter it had just written
-- A crossed observation re-emitted indefinitely when the drafting pass failed
-- False-positive conflict findings between disjoint monorepo rule scopes
+- `docs/design-notes.md`: why bonsai declines a vector database, and why it declines a `SubagentStop`
+  hook — with the reversal condition for each
 
 ### Changed
 - Resident cost corrected from a projected 126 tokens to a measured 162

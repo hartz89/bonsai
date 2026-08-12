@@ -1,6 +1,6 @@
 {
   "name": "bonsai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Grows your agent config as you work, and prunes it before it rots.",
   "author": {
     "name": "Ryan Hartzfeld"
